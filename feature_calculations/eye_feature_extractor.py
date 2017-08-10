@@ -6,7 +6,7 @@ from multiprocessing import Pool
 from experiment_handler.pupil_data_reader import get_fixation_events, get_eye_data
 from experiment_handler.finder import get_eyetracker_participant_list
 from feature_calculations.window_generator import get_windows
-from feature_calculations.common import get_values_in_window
+from feature_calculations.common import get_values_in_window, mean_crossings
 
 
 def get_fixation_length_and_gap_curves(fixation_events, start=None, end=None, step_size=1.0):
@@ -89,12 +89,33 @@ def compute_features(gaze_values, fixation_curves):
 
     Returns
     -------
-        feature values (1 x ? )
-            Extracted features with in the following order: ?? TODO
+        feature values (1 x 12 )
+            Extracted features with in the following order: <mean fixation gap>, <std fixation gap>, <mean fixation length>, <std fixation length>, <mean theta>, <std theta>, <mean crossings theta>, <mean phi>, <std phi>, <mean crossings phi>, <mean pupil diameter>, <std pupil diameter>
     """
-    features = np.zeros((1, 10))
+    features = np.zeros((1, 12))
 
     # TODO: compute eye features
+    # Fixation gap mean and std
+    features[0, 0] = np.mean(fixation_curves[:, 2])
+    features[0, 1] = np.std(fixation_curves[:, 2])
+
+    # Fixation length mean and std
+    features[0, 2] = np.mean(fixation_curves[:, 1])
+    features[0, 3] = np.std(fixation_curves[:, 1])
+
+    # Theta mean, std, mean-crossings
+    features[0, 4] = np.mean(gaze_values[:, 1])
+    features[0, 5] = np.std(gaze_values[:, 1])
+    features[0, 6] = mean_crossings(gaze_values[:, 1])
+
+    # Phi mean, std, mean-crossings
+    features[0, 7] = np.mean(gaze_values[:, 2])
+    features[0, 8] = np.std(gaze_values[:, 2])
+    features[0, 9] = mean_crossings(gaze_values[:, 2])
+
+    # Pupil diameter mean and std
+    features[0, 10] = np.mean(gaze_values[:, 3])
+    features[0, 11] = np.std(gaze_values[:, 3])
 
     return features
 
