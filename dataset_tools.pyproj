@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{3fb2a9fc-95f4-4d05-ab63-061301c475d6}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>test.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>Global|ContinuumAnalytics|Anaconda36-64</InterpreterId>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <IsWindowsApplication>True</IsWindowsApplication>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="common_methods\time_format_conversions.py" />
+    <Compile Include="experiment_handler\converters\merge_fixation_files.py" />
+    <Compile Include="experiment_handler\finder.py" />
+    <Compile Include="experiment_handler\imu_data_reader.py" />
+    <Compile Include="experiment_handler\pupil_data_reader.py" />
+    <Compile Include="experiment_handler\time_synchronisation.py" />
+    <Compile Include="feature_calculations\common.py" />
+    <Compile Include="feature_calculations\eyetracker_feature_extractor.py" />
+    <Compile Include="feature_calculations\eye_feature_extractor.py" />
+    <Compile Include="feature_calculations\imu_feature_extractor.py" />
+    <Compile Include="feature_calculations\sound_feature_extractor.py" />
+    <Compile Include="feature_calculations\window_generator.py" />
+    <Compile Include="test.py">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="common_methods" />
+    <Folder Include="experiment_handler" />
+    <Folder Include="experiment_handler\converters" />
+    <Folder Include="feature_calculations" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda36-64" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>
