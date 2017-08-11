@@ -133,12 +133,7 @@ def generate_eye_features(participant_path, output_dir, window_method, interval_
     fixation_events = get_fixation_events(exp_root, participant, interval_start, interval_end, "video")
 
     fixation_curves = get_fixation_length_and_gap_curves(fixation_events, interval_start, interval_end)
-    import matplotlib.pyplot as plt
-    plt.plot(fixation_curves[:, 0], fixation_curves[:, 1], label="len")
-    plt.plot(fixation_curves[:, 0], fixation_curves[:, 2], label="gap")
-    plt.legend()
-    plt.show()
-
+    
     # If no interval defined, used start and end of the signal:
     if interval_start is None and len(raw_eye_data) > 0:
         interval_start = raw_eye_data[0, 0]
