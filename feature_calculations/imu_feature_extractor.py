@@ -1,8 +1,11 @@
-import os
+import os, sys
 import argparse
 import numpy as np
 from datetime import datetime
 from multiprocessing import Pool
+
+if __package__ is None:
+    sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 from experiment_handler.imu_data_reader import get_imu_data
 from experiment_handler.label_data_reader import read_experiment_phases
 from experiment_handler.finder import find_all_imu_files

@@ -3,6 +3,10 @@ import argparse
 import numpy as np
 from datetime import datetime
 from multiprocessing import Pool
+
+if __package__ is None:
+    sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
+
 from experiment_handler.pupil_data_reader import get_fixation_events, get_eye_data
 from experiment_handler.label_data_reader import read_experiment_phases
 from experiment_handler.finder import get_eyetracker_participant_list
