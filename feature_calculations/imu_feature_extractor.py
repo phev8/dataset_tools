@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 from multiprocessing import Pool
 from experiment_handler.imu_data_reader import get_imu_data
+from experiment_handler.label_data_reader import read_experiment_phases
 from experiment_handler.finder import find_all_imu_files
 from feature_calculations.window_generator import get_windows
 from feature_calculations.common import get_values_in_window
@@ -90,6 +91,9 @@ if __name__ == '__main__':
 
     experiment_root = args.path_to_experiment
     # TODO: parse additinal arguments (window size, window method)
+    start = None
+    end = None
+    window_method = "SW-5000-1000"
 
     # Generate output dir:
     output_dir = os.path.join(experiment_root, "processed_data", "imu_features")
@@ -98,9 +102,11 @@ if __name__ == '__main__':
 
     imu_files = find_all_imu_files(experiment_root)
 
-    start = 50
-    end = 650
-    window_method = "SW-5000-1000"
+    if start is None and end is None:
+        # read experiment phases to generate features in that interval
+        experiment_phases = read_experiment_phases(experiment_root)
+        start = experiment_phases['assembly'][0]
+        end = experiment_phases['disassembly'][1]
 
     arguments = []
     for imu_file in imu_files:

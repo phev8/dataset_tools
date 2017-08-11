@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 from multiprocessing import Pool
 from experiment_handler.pupil_data_reader import get_fixation_events, get_eye_data
+from experiment_handler.label_data_reader import read_experiment_phases
 from experiment_handler.finder import get_eyetracker_participant_list
 from feature_calculations.window_generator import get_windows
 from feature_calculations.common import get_values_in_window, mean_crossings
@@ -94,7 +95,6 @@ def compute_features(gaze_values, fixation_curves):
     """
     features = np.zeros((1, 12))
 
-    # TODO: compute eye features
     # Fixation gap mean and std
     features[0, 0] = np.mean(fixation_curves[:, 2])
     features[0, 1] = np.std(fixation_curves[:, 2])
@@ -188,6 +188,9 @@ if __name__ == '__main__':
 
     experiment_root = args.path_to_experiment
     # TODO: parse additinal arguments (window size, window method)
+    window_method = "SW-5000-1000"
+    start = None
+    end = None
 
     # Generate output dir:
     output_dir = os.path.join(experiment_root, "processed_data", "eye_features")
@@ -197,17 +200,18 @@ if __name__ == '__main__':
     # find participants:
     eyetracker_participants = get_eyetracker_participant_list(experiment_root)
 
-    # TODO: read experiment phases to generate features in that interval
-    start = 50
-    end = 650
-    window_method = "SW-5000-1000"
+    if start is None and end is None:
+        # read experiment phases to generate features in that interval
+        experiment_phases = read_experiment_phases(experiment_root)
+        start = experiment_phases['assembly'][0]
+        end = experiment_phases['disassembly'][1]
 
     # run feature computation parallel for multiple participants
     arguments = []
     for participant in eyetracker_participants:
         arguments.append((participant, output_dir, window_method, start, end, True))
-        generate_eye_features(participant, output_dir, window_method, interval_start=start, interval_end=end, save_as_csv=True)
-        exit()
+        #generate_eye_features(participant, output_dir, window_method, interval_start=start, interval_end=end, save_as_csv=True)
+        #exit()
 
     p = Pool(4)
     p.starmap(generate_eye_features, arguments)
