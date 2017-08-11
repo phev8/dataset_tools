@@ -94,10 +94,10 @@ def compute_features(gaze_values, fixation_curves):
 
     Returns
     -------
-        feature values (1 x 12 )
-            Extracted features with in the following order: <mean fixation gap>, <std fixation gap>, <mean fixation length>, <std fixation length>, <mean theta>, <std theta>, <mean crossings theta>, <mean phi>, <std phi>, <mean crossings phi>, <mean pupil diameter>, <std pupil diameter>
+        feature values (1 x 14 )
+            Extracted features with in the following order: <mean fixation gap>, <std fixation gap>, <mean fixation length>, <std fixation length>, <mean theta>, <std theta>, <mean crossings theta>, <mean phi>, <std phi>, <mean crossings phi>, <mean pupil diameter>, <std pupil diameter>, <mean confidence>, <mean crossing confidence>
     """
-    features = np.zeros((1, 12))
+    features = np.zeros((1, 14))
 
     # Fixation gap mean and std
     features[0, 0] = np.mean(fixation_curves[:, 2])
@@ -120,6 +120,10 @@ def compute_features(gaze_values, fixation_curves):
     # Pupil diameter mean and std
     features[0, 10] = np.mean(gaze_values[:, 3])
     features[0, 11] = np.std(gaze_values[:, 3])
+
+    # Confidence mean and mean-crossings
+    features[0, 12] = np.mean(gaze_values[:, 4])
+    features[0, 13] = mean_crossings(gaze_values[:, 4])
 
     return features
 
