@@ -3,7 +3,12 @@ import argparse
 import numpy as np
 from datetime import datetime
 from multiprocessing import Pool
+
+if __package__ is None:
+    sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
+
 from experiment_handler.pupil_data_reader import get_fixation_events, get_eye_data
+from experiment_handler.label_data_reader import read_experiment_phases
 from experiment_handler.finder import get_eyetracker_participant_list
 from feature_calculations.window_generator import get_windows
 from feature_calculations.common import get_values_in_window, mean_crossings
@@ -89,12 +94,11 @@ def compute_features(gaze_values, fixation_curves):
 
     Returns
     -------
-        feature values (1 x 12 )
-            Extracted features with in the following order: <mean fixation gap>, <std fixation gap>, <mean fixation length>, <std fixation length>, <mean theta>, <std theta>, <mean crossings theta>, <mean phi>, <std phi>, <mean crossings phi>, <mean pupil diameter>, <std pupil diameter>
+        feature values (1 x 14 )
+            Extracted features with in the following order: <mean fixation gap>, <std fixation gap>, <mean fixation length>, <std fixation length>, <mean theta>, <std theta>, <mean crossings theta>, <mean phi>, <std phi>, <mean crossings phi>, <mean pupil diameter>, <std pupil diameter>, <mean confidence>, <mean crossing confidence>
     """
-    features = np.zeros((1, 12))
+    features = np.zeros((1, 14))
 
-    # TODO: compute eye features
     # Fixation gap mean and std
     features[0, 0] = np.mean(fixation_curves[:, 2])
     features[0, 1] = np.std(fixation_curves[:, 2])
@@ -117,6 +121,10 @@ def compute_features(gaze_values, fixation_curves):
     features[0, 10] = np.mean(gaze_values[:, 3])
     features[0, 11] = np.std(gaze_values[:, 3])
 
+    # Confidence mean and mean-crossings
+    features[0, 12] = np.mean(gaze_values[:, 4])
+    features[0, 13] = mean_crossings(gaze_values[:, 4])
+
     return features
 
 
@@ -129,11 +137,6 @@ def generate_eye_features(participant_path, output_dir, window_method, interval_
     fixation_events = get_fixation_events(exp_root, participant, interval_start, interval_end, "video")
 
     fixation_curves = get_fixation_length_and_gap_curves(fixation_events, interval_start, interval_end)
-    import matplotlib.pyplot as plt
-    plt.plot(fixation_curves[:, 0], fixation_curves[:, 1], label="len")
-    plt.plot(fixation_curves[:, 0], fixation_curves[:, 2], label="gap")
-    plt.legend()
-    plt.show()
 
     # If no interval defined, used start and end of the signal:
     if interval_start is None and len(raw_eye_data) > 0:
@@ -176,7 +179,7 @@ if __name__ == '__main__':
     start = datetime.now()
 
     parser = argparse.ArgumentParser(
-        description='Run imu feature extraction.')
+        description='Run eyetracker feature extraction.')
     parser.add_argument(
         '-p', '--path_to_experiment',
         metavar='PATH_TO_EXP',
@@ -184,10 +187,33 @@ if __name__ == '__main__':
         help='Path to experiment folder',
         default="/Volumes/DataDrive/igroups_recordings/igroups_experiment_8"
     )
+    parser.add_argument(
+        '-w', '--window_method',
+        metavar='WINDOW',
+        type=str,
+        help='Name of the window method, e.g. SW-5000-1000',
+        default="SW-5000-1000"
+    )
+    parser.add_argument(
+        '-s', '--interval_start',
+        metavar='START',
+        type=int,
+        help='Start of the evaluation interval in video time reference.',
+        default=None
+    )
+    parser.add_argument(
+        '-e', '--interval_end',
+        metavar='End',
+        type=int,
+        help='End of the evaluation interval in video time reference.',
+        default=None
+    )
     args = parser.parse_args()
 
     experiment_root = args.path_to_experiment
-    # TODO: parse additinal arguments (window size, window method)
+    window_method = args.window_method
+    start = args.interval_start
+    end = args.interval_end
 
     # Generate output dir:
     output_dir = os.path.join(experiment_root, "processed_data", "eye_features")
@@ -197,17 +223,18 @@ if __name__ == '__main__':
     # find participants:
     eyetracker_participants = get_eyetracker_participant_list(experiment_root)
 
-    # TODO: read experiment phases to generate features in that interval
-    start = 50
-    end = 650
-    window_method = "SW-5000-1000"
+    if start is None and end is None:
+        # read experiment phases to generate features in that interval
+        experiment_phases = read_experiment_phases(experiment_root)
+        start = experiment_phases['assembly'][0]
+        end = experiment_phases['disassembly'][1]
 
     # run feature computation parallel for multiple participants
     arguments = []
     for participant in eyetracker_participants:
         arguments.append((participant, output_dir, window_method, start, end, True))
-        generate_eye_features(participant, output_dir, window_method, interval_start=start, interval_end=end, save_as_csv=True)
-        exit()
+        #generate_eye_features(participant, output_dir, window_method, interval_start=start, interval_end=end, save_as_csv=True)
+        #exit()
 
     p = Pool(4)
     p.starmap(generate_eye_features, arguments)
