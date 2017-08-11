@@ -133,7 +133,7 @@ def generate_eye_features(participant_path, output_dir, window_method, interval_
     fixation_events = get_fixation_events(exp_root, participant, interval_start, interval_end, "video")
 
     fixation_curves = get_fixation_length_and_gap_curves(fixation_events, interval_start, interval_end)
-    
+
     # If no interval defined, used start and end of the signal:
     if interval_start is None and len(raw_eye_data) > 0:
         interval_start = raw_eye_data[0, 0]
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     start = datetime.now()
 
     parser = argparse.ArgumentParser(
-        description='Run imu feature extraction.')
+        description='Run eyetracker feature extraction.')
     parser.add_argument(
         '-p', '--path_to_experiment',
         metavar='PATH_TO_EXP',
@@ -183,13 +183,33 @@ if __name__ == '__main__':
         help='Path to experiment folder',
         default="/Volumes/DataDrive/igroups_recordings/igroups_experiment_8"
     )
+    parser.add_argument(
+        '-w', '--window_method',
+        metavar='WINDOW',
+        type=str,
+        help='Name of the window method, e.g. SW-5000-1000',
+        default="SW-5000-1000"
+    )
+    parser.add_argument(
+        '-s', '--interval_start',
+        metavar='START',
+        type=int,
+        help='Start of the evaluation interval in video time reference.',
+        default=None
+    )
+    parser.add_argument(
+        '-e', '--interval_end',
+        metavar='End',
+        type=int,
+        help='End of the evaluation interval in video time reference.',
+        default=None
+    )
     args = parser.parse_args()
 
     experiment_root = args.path_to_experiment
-    # TODO: parse additinal arguments (window size, window method)
-    window_method = "SW-5000-1000"
-    start = None
-    end = None
+    window_method = args.window_method
+    start = args.interval_start
+    end = args.interval_end
 
     # Generate output dir:
     output_dir = os.path.join(experiment_root, "processed_data", "eye_features")
