@@ -63,7 +63,7 @@ if 1:
         #generate_imu_features(imu_file, output_dir, window_method, interval_start=start, interval_end=end, save_as_csv=True)
         #exit()
 
-    p = Pool(1)
+    p = Pool(4)
     p.starmap(generate_imu_features, arguments)
     
     
