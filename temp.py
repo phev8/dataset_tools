@@ -33,6 +33,7 @@ if 1:
         metavar='PATH_TO_EXP',
         type=str,
         help='Path to experiment folder',
+#        default="/data/igroups_recordings/experiment_8"
         default="/Data/igroups_recordings/igroups_experiment_8"
     )
     
@@ -60,8 +61,8 @@ if 1:
     arguments = []
     for imu_file in imu_files:
         arguments.append((imu_file, output_dir, window_method, start, end, True))
-        #generate_imu_features(imu_file, output_dir, window_method, interval_start=start, interval_end=end, save_as_csv=True)
-        #exit()
+        generate_imu_features(imu_file, output_dir, window_method, interval_start=start, interval_end=end, save_as_csv=True)
+        exit()
 
     p = Pool(4)
     p.starmap(generate_imu_features, arguments)

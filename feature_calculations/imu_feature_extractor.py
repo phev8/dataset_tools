@@ -1,8 +1,12 @@
 import os, sys
 import argparse
 import numpy as np
+import pandas as pd
 from datetime import datetime
 from multiprocessing import Pool
+
+from scipy.signal import butter, lfilter
+
 
 if __package__ is None:
     sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
@@ -12,6 +16,28 @@ from experiment_handler.finder import find_all_imu_files
 from feature_calculations.window_generator import get_windows
 from feature_calculations.common import get_values_in_window
 
+
+def butter_lowpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = lfilter(b, a, data)
+
+    return y
+
+
+def zc(d, center=True):
+    'calculate the count of d crossing zero.Center=True standardizes the data to mean=0'
+    
+    if center:
+        d = d - np.mean(d)
+        
+    return np.sum(np.diff(np.signbit(d),axis=0),axis=0)
+    
 
 def compute_features(values):
     """
@@ -29,6 +55,23 @@ def compute_features(values):
     """
     features = np.zeros((1, 10))
 
+    d = pd.DataFrame(values)
+    
+    # TODO: compensate for yaw/pitch/roll shifts from 0 to 360 degrees ?
+    # d.loc[33000:36000,[11]].diff().cumsum().plot()
+    
+    # combined data vectors
+    d['a'] = d.loc[:,[1,2,3]].pow(2).sum(1).pow(0.5) # take the root sum of squares of acceleration
+    d['g'] = d.loc[:,[4,5,6]].pow(2).sum(1).pow(0.5) # take the root sum of squares of gyro
+    d['m'] = d.loc[:,[7,8,9]].pow(2).sum(1).pow(0.5) # take the root sum of squares of magnetic field
+    d['hpy'] = d.loc[:,[10,11,12]].pow(2).sum(1).pow(0.5) # take the root sum of squares of head pitch & yaw
+    
+    
+    # now calculate features
+    # zero crossings
+    zc = d.sub(d.mean(0)).apply(np.signbit,0).diff(0).sum(0)
+    
+    
     # TODO: compute IMU features
 
     return features
@@ -41,6 +84,10 @@ def generate_imu_features(imu_file, output_dir, window_method, interval_start=No
 
     # Access the raw signal:
     raw_signal = get_imu_data(exp_root, source_name, interval_start, interval_end, "video")
+
+    # TODO: interpolate the data to be evenly sampled   
+    # TODO: low-pass filter the data to comply with Nyquist
+    
 
     # If no interval defined, used start and end of the signal:
     if interval_start is None and len(raw_signal) > 0:
