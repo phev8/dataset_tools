@@ -59,6 +59,7 @@ def get_ble_data(experiment_path, source, start=None, end=None, reference_time=N
         return parsed_data
 
 
+
 def get_imu_data(experiment_path, source, start=None, end=None, reference_time=None, convert_time=True):
     """
     Read imu data for a given source (e.g. P3 left hand) in a time interval
@@ -95,6 +96,10 @@ def get_imu_data(experiment_path, source, start=None, end=None, reference_time=N
         start_timestamp = convert_timestamps(experiment_path, start, reference_time, imu_reference_time)
     if end is not None:
         end_timestamp = convert_timestamps(experiment_path, end, reference_time, imu_reference_time)
+            
+    def rss(d):
+        return np.sqrt( np.square(d).sum(axis=1) ) 
+
 
     # Parse lines:
     for imu_line in imu_lines:
@@ -134,6 +139,11 @@ def get_imu_data(experiment_path, source, start=None, end=None, reference_time=N
         current_data[0, 14] = data['measurement']['qy']
         current_data[0, 15] = data['measurement']['qz']
         current_data[0, 16] = data['measurement']['qw']
+ 
+        # RSS combination of accelerometer & gyro signals       
+        #current_data[0, 17] = np.sqrt( np.square( data['measurement']['ax','ay','az'] ).sum() )
+        #current_data[0, 18] = np.sqrt( np.square( data['measurement']['gx','gy','gz'] ).sum() )
+        
 
         parsed_data = np.append(parsed_data, current_data, axis=0)
 
