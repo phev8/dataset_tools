@@ -96,10 +96,7 @@ def generate_imu_features(imu_file, output_dir, window_method, interval_start=No
 
     raw_df = pd.DataFrame(raw_signal, columns = ['timestamp', 'ax', 'ay', 'az', 'gx', 'gy', 'gz', 'mx', 'my', 'mz', 'roll', 'pitch', 'yaw', 'qx', 'qy', 'qz', 'qw']) 
     raw_df.set_index('timestamp',inplace=True)
-    
-#    test = raw_df.copy()
-#    test.index = pd.to_datetime((1e9*test.index))
-    
+        
     
     # additional data vectors
     raw_df['a'] = raw_df.loc[:,['ax','ay','az']].pow(2).sum(1).pow(0.5) # take the root sum of squares of acceleration
@@ -140,7 +137,7 @@ def generate_imu_features(imu_file, output_dir, window_method, interval_start=No
             #np.savetxt(f, features)
         features.to_csv( output_file + ".csv", index_label=False )
 
-    print("Finished processing " + imu_file)
+    print("Finished processing " + output_file)
 
 
 if __name__ == '__main__':
