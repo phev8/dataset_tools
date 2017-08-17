@@ -114,7 +114,7 @@ def generate_imu_features(imu_file, output_dir, window_method, interval_start=No
     # Calculate window sizes:
     windows = get_windows(interval_start, interval_end, window_method, source=imu_file)
     windows = pd.DataFrame( windows, columns = ['t_start','t_mid','t_end'] )
-    windows['label'] = -100
+    windows['label'] = 'no_label'
 
 
     features = pd.DataFrame()

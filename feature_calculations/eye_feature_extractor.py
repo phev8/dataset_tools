@@ -1,9 +1,9 @@
 import os, sys
 import argparse
 import numpy as np
+import pandas as pd
 from datetime import datetime
 from multiprocessing import Pool
-
 if __package__ is None:
     sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 
@@ -166,11 +166,20 @@ def generate_eye_features(participant_path, output_dir, window_method, interval_
 
     features = np.array(features).reshape(len(features), -1)
 
+    # Convert to pandas:
+    features_df = pd.DataFrame(features,
+                          columns=['t_start', 't_mid', 't_end', 'label', 'fixation_gap_mean', 'fixation_gap_std',
+                                   'fixation_length_mean', 'fixation_length_std', 'theta_mean', 'theta_std',
+                                   'theta_mean_crossings', 'phi_mean', 'phi_std', 'phi_mean_crossings',
+                                   'pupil_size_mean', 'pupil_size_std', 'confidence_mean', 'confidence_mean_crossings'])
+
+    features_df['label'] = 'no_label'
+
     output_file = os.path.join(output_dir, participant + "_eye_features_" + window_method + "_empty-labels")
-    np.save(output_file + ".npy", features)
+
+    pd.to_pickle(features_df, output_file + ".pickle")
     if save_as_csv:
-        with open(output_file + ".csv", 'wb') as f:
-            np.savetxt(f, features)
+        features_df.to_csv(output_file + ".csv", index_label=False)
 
     print("Finished processing " + participant_path)
 
