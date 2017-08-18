@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from feature_calculations.python_speech_features import mfcc 
+#from feature_calculations.python_speech_features import mfcc 
 
 from datetime import datetime
 from multiprocessing import Pool
@@ -68,17 +68,17 @@ def compute_features( d ):
 
 
 
-def generate_sound_features_with_mfcc(participant_path, output_dir, window_method, interval_start=None, interval_end=None, save_as_csv=False):
-    """
-    TODO: finish the function
-        Calculates audio features using the MFCC method borrowed from James Lyon's python_speech_features package (https://github.com/jameslyons/python_speech_features)
-        
-    """
-##
-    feat = mfcc(raw_sound_data.values, samplerate=16000, winlen=0.025, winstep=0.01, numcep=13,
-         nfilt=26, nfft=512, lowfreq=0, highfreq=None,preemph=0.97,ceplifter=22,appendEnergy=True )
-
-##
+#def generate_sound_features_with_mfcc(participant_path, output_dir, window_method, interval_start=None, interval_end=None, save_as_csv=False):
+#    """
+#    TODO: finish the function
+#        Calculates audio features using the MFCC method borrowed from James Lyon's python_speech_features package (https://github.com/jameslyons/python_speech_features)
+#        
+#    """
+###
+#    feat = mfcc(raw_sound_data.values, samplerate=16000, winlen=0.025, winstep=0.01, numcep=13,
+#         nfilt=26, nfft=512, lowfreq=0, highfreq=None,preemph=0.97,ceplifter=22,appendEnergy=True )
+#
+###
     
 
 
