@@ -120,3 +120,22 @@ def find_all_imu_files(exp_root):
     files = [os.path.join(imu_dir, file) for file in os.listdir(imu_dir) if os.path.isfile(os.path.join(imu_dir, file)) and file.split(".")[-1] == "log"]
     return files
 
+
+##################
+# sound            #
+##################
+def find_all_sound_files(exp_root):
+    snd_dir = os.path.join(exp_root, "audio")
+    files = [os.path.join(snd_dir, file) for file in os.listdir(snd_dir) if os.path.isfile(os.path.join(snd_dir, file)) and file.split(".")[-1] == "wav"]
+    return files
+
+
+
+
+
+
+
+
+
+
+
