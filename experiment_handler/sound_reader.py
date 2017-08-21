@@ -36,6 +36,7 @@ def get_sound_data(experiment_path, source, start=None, end=None, reference_time
 
     wav_filepath = os.path.join(experiment_path, "audio", source + ".wav" )
     [rate, parsed_data] = wavfile.read(wav_filepath)
+    print(["loading " + wav_filepath + " at " + str(rate) + " Hz"])
 
     parsed_data = pd.DataFrame( parsed_data, columns = ['h','w'] )
     # give it an index in seconds
@@ -45,18 +46,15 @@ def get_sound_data(experiment_path, source, start=None, end=None, reference_time
     
     # Convert start and end time (to sound_reference_time)
     if start is not None:
-        # BUG: from and to need to be switched for audio <-> video time conversion
-        start_timestamp = convert_timestamps(experiment_path, start, sound_reference_time, reference_time)
+        start_timestamp = convert_timestamps(experiment_path, start, reference_time, sound_reference_time)
         parsed_data = parsed_data.loc[parsed_data.index >= start_timestamp,:]
 
     if end is not None:
-        # BUG: from and to need to be switched for audio <-> video time conversion
-        end_timestamp = convert_timestamps(experiment_path, end, sound_reference_time, reference_time)
+        end_timestamp = convert_timestamps(experiment_path, end, reference_time, sound_reference_time)
         parsed_data = parsed_data.loc[parsed_data.index <= end_timestamp,:]
 
     if convert_time:
-        # BUG: from and to need to be switched for audio <-> video time conversion
-        parsed_data.index = convert_timestamps(experiment_path, parsed_data.index, reference_time, sound_reference_time)
+        parsed_data.index = convert_timestamps(experiment_path, parsed_data.index, sound_reference_time, reference_time)
 
 
     return parsed_data
@@ -64,7 +62,7 @@ def get_sound_data(experiment_path, source, start=None, end=None, reference_time
 
 
 if __name__ == '__main__':
-    exp_root = "/Data/igroups_recordings/igroups_experiment_8"
+    exp_root = "/data/igroups_recordings/experiment_9"
 
     data = get_sound_data(exp_root, "P3", start=1145, end=1155, reference_time="video", convert_time=True)
 
