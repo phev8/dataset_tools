@@ -1,8 +1,12 @@
 import os, sys
 import argparse
 import numpy as np
+import pandas as pd
 from datetime import datetime
 from multiprocessing import Pool
+
+from scipy.signal import butter, lfilter
+
 
 if __package__ is None:
     sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
@@ -13,25 +17,73 @@ from feature_calculations.window_generator import get_windows
 from feature_calculations.common import get_values_in_window
 
 
+def butter_lowpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = lfilter(b, a, data)
+
+    return y
+
+
+    
+
 def compute_features(values):
     """
     Compute IMU features for the given array (already windowed)
 
     Parameters
     ----------
-    values: numpy array (n x 17)
-        IMU data with columns order:  <timestamp>, <ax>, <ay>, <az>, <gx>, <gy>, <gz>, <mx>, <my>, <mz>, <roll>, <pitch>, <yaw>, <qx>, <qy>, <gz>, <qw>
+    values: pandas dataframe (n x 20)
+        IMU data with row index: <timestamp>, and columns: <ax>, <ay>, <az>, <gx>, <gy>, <gz>, <mx>, <my>, <mz>, <roll>, <pitch>, <yaw>, <qx>, <qy>, <gz>, <qw>, 
+             (with combined vectors)                     ... <a>, <g>, <m>, <ypr>
 
     Returns
     -------
-        feature values (1 x ? )
-            Extracted features with in the following order: ?? TODO
+        feature values pandas (1 x ? )
+            Extracted features with the column naming scheme <raw data index>_<method name>, e.g. 'ax_mean'
     """
-    features = np.zeros((1, 10))
+    d = values.copy()
+    details = d.describe()    
+        
+    # calculate features    
+    F = pd.DataFrame()    
 
-    # TODO: compute IMU features
+    for col in d.columns:
+    
+        for method in details.index: # access mean, std, min, 25%, 50%, 75%, max
+            F.loc[0, col + '_' + method] = details.loc[method, col]
+        
+        F.loc[0, col + '_' + 'skew'] = d[col].skew(0)
+        F.loc[0, col + '_' + 'kurt'] = d[col].kurt(0)
 
-    return features
+       
+        d_u = details.loc['mean', col]
+        d_with_u0 = d[col].sub( d_u ) # make the mean zero        
+        
+        # zero crossing rate (with window mean removed from signal beforehand)        
+        F.loc[0, col + '_' + 'zc'] = d_with_u0.apply(np.signbit,0).diff(1).sum(0)
+
+        F.loc[0, col + '_' + 'ste'] = d[col].pow(2,fill_value=0).mean(0) # short time energy
+                     
+        try:
+            freq = pd.DataFrame(abs(np.fft.rfft(d_with_u0)))[1:].sort_values(by=0)                     
+            F.loc[0, col + '_' + 'freq1'] = freq.iloc[-1].name # dominant frequency
+            F.loc[0, col + '_' + 'Pfreq1'] = freq.iloc[-1][0]**2  # dominant frequency power
+            F.loc[0, col + '_' + 'freq2'] = freq.iloc[-2].name # 2nd dominant frequency
+            F.loc[0, col + '_' + 'Pfreq2'] = freq.iloc[-2][0]**2 # 2nd dominant frequency power
+        except:
+            F.loc[0, col + '_' + 'freq1'] = None
+            F.loc[0, col + '_' + 'Pfreq1'] = None
+            F.loc[0, col + '_' + 'freq2'] = None
+            F.loc[0, col + '_' + 'Pfreq2'] = None
+            
+    
+    return F
 
 
 def generate_imu_features(imu_file, output_dir, window_method, interval_start=None, interval_end=None, save_as_csv=False):
@@ -42,40 +94,50 @@ def generate_imu_features(imu_file, output_dir, window_method, interval_start=No
     # Access the raw signal:
     raw_signal = get_imu_data(exp_root, source_name, interval_start, interval_end, "video")
 
+    raw_df = pd.DataFrame(raw_signal, columns = ['timestamp', 'ax', 'ay', 'az', 'gx', 'gy', 'gz', 'mx', 'my', 'mz', 'roll', 'pitch', 'yaw', 'qx', 'qy', 'qz', 'qw']) 
+    raw_df.set_index('timestamp',inplace=True)
+        
+    
+    # additional data vectors
+    raw_df['a'] = raw_df.loc[:,['ax','ay','az']].pow(2).sum(1).pow(0.5) # take the root sum of squares of acceleration
+    raw_df['g'] = raw_df.loc[:,['gx','gy','gz']].pow(2).sum(1).pow(0.5) # take the root sum of squares of gyro
+    raw_df['m'] = raw_df.loc[:,['mx','my','mz']].pow(2).sum(1).pow(0.5) # take the root sum of squares of magnetic field
+    raw_df['hpy'] = raw_df.loc[:,['yaw','pitch','roll']].pow(2).sum(1).pow(0.5) # take the root sum of squares of head pitch & yaw
+
     # If no interval defined, used start and end of the signal:
     if interval_start is None and len(raw_signal) > 0:
-        interval_start = raw_signal[0, 0]
+        interval_start = raw_df.index[0]   #  raw_signal[0, 0]
 
     if interval_end is None and len(raw_signal) > 0:
-        interval_end = raw_signal[-1, 0]
+        interval_end = raw_df.index[-1] # raw_signal[-1, 0]
 
     # Calculate window sizes:
     windows = get_windows(interval_start, interval_end, window_method, source=imu_file)
+    windows = pd.DataFrame( windows, columns = ['t_start','t_mid','t_end'] )
+    windows['label'] = 'no_label'
 
-    features = []
 
-    for window in windows:
-        current_values = get_values_in_window(raw_signal, window[0], window[2])
+    features = pd.DataFrame()
+
+    for wnd in windows.itertuples():
+        
+        current_values = raw_df[ (raw_df.index >= wnd.t_start) & (raw_df.index <= wnd.t_end) ]          
+        #get_values_in_window(raw_signal, window[0], window[2])
         current_features = compute_features(current_values)
+        features = features.append( current_features, ignore_index = True)
 
-        current_row = np.zeros((1, 4 + current_features.shape[1]))
-        current_row[0, 0] = window[0]
-        current_row[0, 1] = window[1]
-        current_row[0, 2] = window[2]
-        current_row[0, 3] = -100 # dummy label
-        current_row[0, 4:] = current_features
-
-        features.append(current_row)
-
-    features = np.array(features).reshape(len(features), -1)
+    # combine with windows data
+    features = windows.join(features)
 
     output_file = os.path.join(output_dir, source_name + "_" + window_method + "_empty-labels")
-    np.save(output_file + ".npy", features)
+    #np.save(output_file + ".npy", features)
+    pd.to_pickle( features, output_file+".pickle" ) 
     if save_as_csv:
-        with open(output_file + ".csv", 'wb') as f:
-            np.savetxt(f, features)
+        #with open(output_file + ".csv", 'wb') as f:
+            #np.savetxt(f, features)
+        features.to_csv( output_file + ".csv", index_label=False )
 
-    print("Finished processing " + imu_file)
+    print("Finished processing " + output_file)
 
 
 if __name__ == '__main__':
