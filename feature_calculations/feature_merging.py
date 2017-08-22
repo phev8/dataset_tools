@@ -92,8 +92,8 @@ def merge_features(experiment_root, person_id, sources, sample_times, max_time_d
 
 
 if __name__ == '__main__':
-#    experiment_root = "D:\dfki_data\igroups_recordings\experiment_8"
-    experiment_root = "\data\igroups_recordings\experiment_8"
+
+    experiment_root = os.path.join('data','igroups_recordings','experiment_8')
     feature_files = ["imu_left_SW-5000-1000_empty-labels",
                      "imu_right_SW-5000-1000_empty-labels",
                      "imu_head_SW-5000-1000_empty-labels",
