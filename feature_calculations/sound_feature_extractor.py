@@ -122,6 +122,49 @@ def generate_sound_features(participant_path, output_dir, window_method, interva
 
 
 
+def smooth_sound_features(participant_path, output_dir, base_window_method, window_method, interval_start=None, interval_end=None, save_as_csv=False):
+    print("Start processing for " + participant_path)
+    exp_root = os.path.dirname(os.path.dirname(participant_path))
+    participant = os.path.basename(participant_path).split(".")[0]
+
+    input_file = os.path.join(output_dir, participant + "_sound_features_" + base_window_method + "_empty-labels")
+
+    # load lower level features
+    features_in = pd.read_pickle(input_file + ".pickle")
+    
+    # If no interval defined, used start and end of the signal:
+    if interval_start is None and len(features_in) > 0:
+        interval_start = features_in.loc[0,'t_start'] 
+
+    if interval_end is None and len(features_in) > 0:
+        interval_end = features_in.loc[len(features_in)-1,'t_end']
+
+    # Calculate window sizes:
+    windows = get_windows(interval_start, interval_end, window_method )
+    windows = pd.DataFrame( windows, columns = ['t_start','t_mid','t_end'] )
+    windows['label'] = 'no_label'
+
+    features = pd.DataFrame()
+        
+    for wnd in windows.itertuples():        
+        current_values = features_in[ (features_in.t_start >= wnd.t_start) & (features_in.t_end <= wnd.t_end) ]          
+        current_features = current_values.mean()
+        features = features.append( current_features, ignore_index = True)
+
+    # remove old axes
+    features = features.drop(['t_start','t_mid','t_end','label'],axis=1)
+
+    # combine with windows data
+    features = windows.join(features)
+
+    output_file = os.path.join(output_dir, participant + "_sound_features_" + window_method + "_empty-labels")
+
+    pd.to_pickle(features, output_file + ".pickle")
+    if save_as_csv:
+        features.to_csv(output_file + ".csv", index_label=False)
+
+    print("Finished processing " + participant_path)
+
 
 
 
@@ -135,7 +178,8 @@ if __name__ == '__main__':
         metavar='PATH_TO_EXP',
         type=str,
         help='Path to experiment folder',
-        default="/data/igroups_recordings/experiment_8"
+        #default="/data/igroups_recordings/experiment_8"
+        default="D:\\dfki_data\\igroups_recordings\\experiment_8"
     )
     parser.add_argument(
         '-w', '--window_method',
@@ -186,5 +230,34 @@ if __name__ == '__main__':
         #generate_sound_features(participant, output_dir, window_method, interval_start=start, interval_end=end, save_as_csv=False)
         #exit()
 
-    p = Pool(4)
-    p.starmap(generate_sound_features, arguments)
+ #   p = Pool(4)
+ #   p.starmap(generate_sound_features, arguments)
+
+
+    # Generate meta features on larger 1sec sliding windows using the base above
+
+    parser.add_argument(
+        '-b', '--base_window_method',
+        metavar='BASEWINDOW',
+        type=str,
+        help='Name of the base window method, e.g. SW-40-40',
+        default="SW-40-40"
+    )
+    
+    args = parser.parse_args()
+    args.window_method = "SW-1000-1000"  # new output windowing
+
+    experiment_root = args.path_to_experiment
+    window_method = args.window_method
+    base_window_method = args.base_window_method
+    start = args.interval_start
+    end = args.interval_end
+
+    arguments = []
+    for participant in participants:
+        arguments.append((participant, output_dir, base_window_method, window_method, start, end, True))
+        #smooth_sound_features(participant, output_dir, base_window_method, window_method, interval_start=start, interval_end=end, save_as_csv=False)
+        #exit()
+
+    p = Pool(2)
+    p.starmap(smooth_sound_features, arguments)
