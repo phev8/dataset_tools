@@ -92,14 +92,14 @@ def merge_features(experiment_root, person_id, sources, sample_times, max_time_d
 
 
 if __name__ == '__main__':
-    experiment_root = "/Volumes/DataDrive/igroups_recordings/igroups_experiment_8"
-
+#    experiment_root = "D:\dfki_data\igroups_recordings\experiment_8"
+    experiment_root = "\data\igroups_recordings\experiment_8"
     feature_files = ["imu_left_SW-5000-1000_empty-labels",
                      "imu_right_SW-5000-1000_empty-labels",
                      "imu_head_SW-5000-1000_empty-labels",
-                     "eye_features_SW-15000-1000_empty-labels"]
+                     "eye_features_SW-15000-1000_empty-labels",
+                     "sound_features_SW-1000-1000_empty-labels"]
 
-    person_id = "P1"
 
     start = None
     end = None
@@ -115,5 +115,16 @@ if __name__ == '__main__':
     # generate sample times between start and end with stepsize
     sample_times = np.arange(start, end, step)
 
-    merged_features = merge_features(experiment_root, person_id, feature_files, sample_times)
-    print(merged_features)
+    for person_id in ['P1','P2','P3','P4']:
+        merged_features = merge_features(experiment_root, person_id, feature_files, sample_times)
+
+        output_dir = os.path.join(experiment_root, "processed_data", "merged_features", person_id )
+        merged_features.to_csv(output_dir+'.csv', line_terminator='\r\n', index_label=True)
+        merged_features.to_pickle(output_dir+'.pickle' )
+        merged_features.to_csv()
+
+        print(merged_features)
+
+
+
+
