@@ -178,8 +178,8 @@ if __name__ == '__main__':
         metavar='PATH_TO_EXP',
         type=str,
         help='Path to experiment folder',
-        #default="/data/igroups_recordings/experiment_8"
-        default="D:\\dfki_data\\igroups_recordings\\experiment_8"
+        default="/data/igroups_recordings/experiment_8"
+        #default="D:\\dfki_data\\igroups_recordings\\experiment_8"
     )
     parser.add_argument(
         '-w', '--window_method',
