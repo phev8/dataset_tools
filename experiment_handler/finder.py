@@ -113,6 +113,19 @@ def check_if_eyetracker_recording_complete(eyetracker_recording_path):
 
 
 ##################
+# Face detections#
+##################
+def find_face_detection_files(exp_root):
+    face_det_dir = os.path.join(exp_root, "processed_data", "face_detections")
+    fd_files = []
+    for root, subdirs, files in os.walk(face_det_dir):
+        for dir in subdirs:
+            fd_files.append(os.path.join(root, dir, 'face_features.pkl'))
+        break
+    return fd_files
+
+
+##################
 # IMU            #
 ##################
 def find_all_imu_files(exp_root):
