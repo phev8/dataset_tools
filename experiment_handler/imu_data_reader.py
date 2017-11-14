@@ -100,10 +100,6 @@ def get_imu_data(experiment_path, source, start=None, end=None, reference_time=N
         start_timestamp = convert_timestamps(experiment_path, start, reference_time, imu_reference_time)
     if end is not None:
         end_timestamp = convert_timestamps(experiment_path, end, reference_time, imu_reference_time)
-            
-    def rss(d):
-        return np.sqrt( np.square(d).sum(axis=1) ) 
-
 
     if start is not None:
         parsed_data = parsed_data[parsed_data[:, 0] >= start_timestamp, :]
