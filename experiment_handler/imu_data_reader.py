@@ -24,6 +24,31 @@ def _get_beacon_id(ble_data, use_uuid=True):
 
 
 def find_and_categorize_beacon_ids(experiments, threshold=45, save_ids=True):
+    """
+    Find bluetooth beacon ids and count how many times they occur during the given experiments
+    Observation showed that some beacon ids randomly appear only a few times during the experiments
+    This function sort the ids into two categories (static id: appearing again and again, changing ids: occuring only a few times)
+
+
+    Parameters
+    ----------
+    experiments: list of str
+        List of pathes to the experiment roots
+    threshold: int
+        Defines separation threshold. Beacon ids with equal or less then this many detection are defined as changing id,
+    save_ids: boolean
+        If True result dictionary is saved to 'beacon_ids.json'
+
+    Returns
+    -------
+        static_ids: list of str
+            IDs with more detection than the threshold
+        changing_ids: list of str
+            IDs with less or equal detection than the threshold
+        ids_detection_counts: dict
+            Dictionary with id as key and count of detection as value
+
+    """
     # Recompute set of ids from bluetooth beacons which are apparently static
     ids_detection_counts = {}
 
