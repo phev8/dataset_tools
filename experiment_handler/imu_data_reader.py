@@ -96,7 +96,8 @@ def find_and_categorize_beacon_ids(experiments, threshold=45, save_ids=True):
 
 
 def load_beacon_ids():
-    with open('beacon_ids.json', 'r') as fp:
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(dir_path, 'beacon_ids.json'), 'r') as fp:
         sorted_ids = json.load(fp)
         return sorted_ids
 
