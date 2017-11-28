@@ -184,51 +184,8 @@ def detect_colocation(times, p1_beacons, p2_beacons, p3_beacons, p4_beacons, thr
     return colocation
 
 
-def _get_score_for_single_pair(labels, detections):
-    tmp = labels[:, 1] - detections[:, 1]
-
-    fn = np.count_nonzero(tmp == 1)
-    fp = np.count_nonzero(tmp == -1)
-    tp = np.count_nonzero(tmp == 0)
-
-    return [tp, fp, fn]
 
 
-def calculate_score(colocation_labels, colocation_detections):
-    p1p2_scores = _get_score_for_single_pair(colocation_labels["P1"]["P2"], colocation_detections["P1"]["P2"])
-    p1p3_scores = _get_score_for_single_pair(colocation_labels["P1"]["P3"], colocation_detections["P1"]["P3"])
-    p1p4_scores = _get_score_for_single_pair(colocation_labels["P1"]["P4"], colocation_detections["P1"]["P4"])
-    p2p3_scores = _get_score_for_single_pair(colocation_labels["P2"]["P3"], colocation_detections["P2"]["P3"])
-    p2p4_scores = _get_score_for_single_pair(colocation_labels["P2"]["P4"], colocation_detections["P2"]["P4"])
-    p3p4_scores = _get_score_for_single_pair(colocation_labels["P3"]["P4"], colocation_detections["P3"]["P4"])
-
-    scores = np.array([
-        p1p2_scores, p1p3_scores, p1p4_scores, p2p3_scores, p2p4_scores, p3p4_scores
-    ])
-    sums = np.sum(scores, axis=0)
-    p = sums[0] / (sums[0] + sums[1])
-    r = sums[0] / (sums[0] + sums[2])
-    f1 = 2*sums[0] / (2*sums[0] + sums[1] + sums[2])
-
-    return p, r, f1
-
-
-
-
-
-
-
-# TODO: find last known position
-
-# TODO: read beacon data from head IMU
-
-# TODO: for each person calculate differences to the other persons
-
-# TODO: plot
-
-# TODO: define threshold to colocation
-
-# TODO: compare with ground truth
 
 
 def create_colocation_plots(colocation_labels, colocation_detections):
@@ -312,6 +269,73 @@ def create_colocation_plots(colocation_labels, colocation_detections):
     plt.show()
 
 
+def _get_score_for_single_pair(labels, detections):
+    """
+
+    Parameters
+    ----------
+    labels: numpy array (Nx2)
+        Co-location ground truth (first column = sample time, second column = 0 if not colocated 1 if colocated)
+    detections: numpy array (Nx2)
+        Detected Co-locations (first column = sample time, second column = 0 if not colocated 1 if colocated)
+
+    Returns
+    -------
+        scores: list
+            List of four items. 1: number of true positives 2: number false positives
+            3: number of false negatives 4: number of true negatives
+
+    """
+    tmp = labels[:, 1] - detections[:, 1]
+
+    fn = np.count_nonzero(tmp == 1)
+    fp = np.count_nonzero(tmp == -1)
+    tp = np.count_nonzero(labels[tmp == 0, 1])
+    tn = len(tmp) - fn - fp - tp
+    
+    return [tp, fp, fn, tn]
+
+
+def calculate_score(colocation_labels, colocation_detections):
+    """
+    Calculating some standard frame-by-frame scores for colocation detections
+
+    Parameters
+    ----------
+    colocation_labels
+    colocation_detections
+
+    Returns
+    -------
+        p: float
+            Precision
+        r: float
+            Recall
+        a: float
+            Accuracy
+        f1: float
+            F1-score
+
+    """
+    p1p2_scores = _get_score_for_single_pair(colocation_labels["P1"]["P2"], colocation_detections["P1"]["P2"])
+    p1p3_scores = _get_score_for_single_pair(colocation_labels["P1"]["P3"], colocation_detections["P1"]["P3"])
+    p1p4_scores = _get_score_for_single_pair(colocation_labels["P1"]["P4"], colocation_detections["P1"]["P4"])
+    p2p3_scores = _get_score_for_single_pair(colocation_labels["P2"]["P3"], colocation_detections["P2"]["P3"])
+    p2p4_scores = _get_score_for_single_pair(colocation_labels["P2"]["P4"], colocation_detections["P2"]["P4"])
+    p3p4_scores = _get_score_for_single_pair(colocation_labels["P3"]["P4"], colocation_detections["P3"]["P4"])
+
+    scores = np.array([
+        p1p2_scores, p1p3_scores, p1p4_scores, p2p3_scores, p2p4_scores, p3p4_scores
+    ])
+    sums = np.sum(scores, axis=0)
+    p = sums[0] / (sums[0] + sums[1])
+    r = sums[0] / (sums[0] + sums[2])
+    a = (sums[0] + sums[3]) / (sums[0] + sums[3] + sums[1] + sums[2])
+    f1 = 2*sums[0] / (2*sums[0] + sums[1] + sums[2])
+
+    return p, r, a, f1
+
+
 def find_best_threshold_workflow(experiment, sample_step_size, threshold_min, threshold_max, th_stepsize):
     """
     Testing a range of threshold and printing evaluations scores (Precision, recall and f1 score)
@@ -357,7 +381,7 @@ def find_best_threshold_workflow(experiment, sample_step_size, threshold_min, th
         scores = calculate_score(colocation_labels, detected_colocations)
 
         print("\n----------- Score for threshold = " + str(threshold) + " ------------")
-        print("Precision: " + str(scores[0]) + ", Recall: " + str(scores[1]) + ", F1-score: " + str(scores[2]))
+        print("Precision: " + str(scores[0]) + ", Recall: " + str(scores[1]) + ", Accuracy: " + str(scores[2]) + ", F1-score: " + str(scores[3]))
         print("----------- ------------------------- ------------")
 
 
