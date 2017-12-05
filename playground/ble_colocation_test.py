@@ -5,45 +5,9 @@ import pickle
 from experiment_handler.label_data_reader import read_experiment_phases, read_location_labels
 from experiment_handler.imu_data_reader import get_ble_data
 
-from experiment_handler.time_synchronisation import convert_timestamps
-
-location_number_lookup = {
-    "L1": 1, "L2": 2, "L3": 3, "L4": 4, "L5": 5
-}
-
-# TODO: generate sample times
-def generate_sample_times(start, end, step):
-    return np.arange(start, end, step)
+from playground.ble_common_methods import *
 
 
-def get_last_known_location_label_for_person(ground_truth, person, time, reference):
-    p_locs = ground_truth[person]
-
-    loc = location_number_lookup[p_locs[0]['location']]
-
-    ct = convert_timestamps(experiment, time, reference, p_locs[0]['reference'])
-    for p_loc in p_locs:
-        if p_loc['start'] <= ct < p_loc['end']:
-            loc = location_number_lookup[p_loc["location"]]
-            break
-        if ct > p_loc['end']:
-            loc = location_number_lookup[p_loc["location"]]
-
-    return loc
-
-
-def get_location_of_persons_at_samples(location_labels, sample_times):
-    locations = []
-
-    for t in sample_times:
-        p1_loc = get_last_known_location_label_for_person(location_labels, "P1", t, "video")
-        p2_loc = get_last_known_location_label_for_person(location_labels, "P2", t, "video")
-        p3_loc = get_last_known_location_label_for_person(location_labels, "P3", t, "video")
-        p4_loc = get_last_known_location_label_for_person(location_labels, "P4", t, "video")
-        current = [t, p1_loc, p2_loc, p3_loc, p4_loc]
-        locations.append(current)
-
-    return np.array(locations)
 
 
 def get_colocation_labels(locations_at_samples):
@@ -100,20 +64,6 @@ def get_colocation_labels(locations_at_samples):
     colocation["P4"]["P2"][(locations_at_samples[:, 2] - locations_at_samples[:, 4]) != 0, 1] = 0
 
     return colocation
-
-
-def get_last_beacon_info(time, beacon_data):
-    last_seen_beacons = np.zeros((1, beacon_data.shape[1]))
-    last_seen_beacons[0] = time
-
-    time_diff = beacon_data[:, 0] - time
-
-    tmp = beacon_data[time_diff <= 0, :]
-    time_diff = time_diff[time_diff <= 0]
-    if len(tmp) > 0:
-        index = np.argmax(time_diff)
-        last_seen_beacons[0, 1:] = tmp[index, 1:]
-    return last_seen_beacons
 
 
 def detect_colocation(times, p1_beacons, p2_beacons, p3_beacons, p4_beacons, threshold):
@@ -184,9 +134,6 @@ def detect_colocation(times, p1_beacons, p2_beacons, p3_beacons, p4_beacons, thr
         colocation["P4"]["P2"][idx, 1] = 0 if np.linalg.norm(p2[0, 1:] - p4[0, 1:]) > threshold else 1
 
     return colocation
-
-
-
 
 
 
@@ -452,11 +399,11 @@ if __name__ == '__main__':
     recalc = False
 
     phases = read_experiment_phases(experiment)
-    times = generate_sample_times(phases['assembly'][0], phases['disassembly'][1], 3)
+    times = generate_sample_times(phases['assembly'][0], phases['disassembly'][1], stepsize)
 
     # Labels:
     location_labels = read_location_labels(experiment)
-    locations = get_location_of_persons_at_samples(location_labels, times)
+    locations = get_location_of_persons_at_samples(location_labels, times, experiment)
 
     colocation_labels = get_colocation_labels(locations)
 
