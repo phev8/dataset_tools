@@ -76,6 +76,7 @@ def create_training_matrices(experiment, sample_times):
 
     return data
 
+
 # TODO: test classifiers for location detections using leave one person out for one experiment
 def test_location_detection_with_one_experiment(experiment_root, sample_distance):
     phases = read_experiment_phases(experiment)
@@ -133,8 +134,8 @@ def test_location_detection_with_one_experiment(experiment_root, sample_distance
         y_test = data_matrices[test_for][:, -1]
         y_pred = clf.predict(data_matrices[test_for][:, 1:-1])
 
-        axarr[idx].plot(t_test, y_test, 'o', label="Grount truth")
-        axarr[idx].plot(t_test, y_pred, 'x', label="Grount truth")
+        axarr[idx].plot(t_test, y_test, 'o', label="Ground truth")
+        axarr[idx].plot(t_test, y_pred, 'x', label="Detection")
         axarr[idx].grid()
         axarr[idx].legend()
         axarr[idx].set_title(test_for + " locations")
@@ -142,8 +143,6 @@ def test_location_detection_with_one_experiment(experiment_root, sample_distance
 
     plt.xlabel("Time [s]")
     plt.show()
-
-
 
 
 if __name__ == '__main__':
