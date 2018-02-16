@@ -4,10 +4,9 @@ from matplotlib.patches import Rectangle
 import pickle
 from experiment_handler.label_data_reader import read_experiment_phases, read_location_labels
 from experiment_handler.imu_data_reader import get_ble_data
+from feature_calculations.colocation.common import get_location_of_persons_at_samples
 
 from playground.ble_common_methods import *
-
-
 
 
 def get_colocation_labels(locations_at_samples):
@@ -134,7 +133,6 @@ def detect_colocation(times, p1_beacons, p2_beacons, p3_beacons, p4_beacons, thr
         colocation["P4"]["P2"][idx, 1] = 0 if np.linalg.norm(p2[0, 1:] - p4[0, 1:]) > threshold else 1
 
     return colocation
-
 
 
 def create_colocation_plots(colocation_labels, colocation_detections):
