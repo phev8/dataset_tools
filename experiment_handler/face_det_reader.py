@@ -49,7 +49,7 @@ def get_face_detection_data(experiment_path, start=None, end=None, reference_tim
         person_id = fd.person_id.iloc[0]
         et_reference = person_id + "_eyetracker"
 
-        # Convert start and end time (to sound_reference_time)
+        # Convert start and end time
         if start is not None:
             start_timestamp = convert_timestamps(experiment_path, start, reference_time, et_reference)
             fd = fd.loc[fd.timestamp >= start_timestamp, :]
