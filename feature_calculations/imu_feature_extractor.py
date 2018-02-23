@@ -150,15 +150,37 @@ if __name__ == '__main__':
         metavar='PATH_TO_EXP',
         type=str,
         help='Path to experiment folder',
-        default="/Volumes/DataDrive/igroups_recordings/igroups_experiment_8"
+        #default="/Volumes/DataDrive/igroups_recordings/igroups_experiment_8"
+        default="/Users/hevesi/ownCloud/Datasets/igroups_experiment_9"
+    )
+    parser.add_argument(
+        '-w', '--window_method',
+        metavar='WINDOW',
+        type=str,
+        help='Name of the window method, e.g. SW-5000-1000',
+        default="SW-5000-1000"
+    )
+    parser.add_argument(
+        '-s', '--interval_start',
+        metavar='START',
+        type=int,
+        help='Start of the evaluation interval in video time reference.',
+        default=None
+    )
+    parser.add_argument(
+        '-e', '--interval_end',
+        metavar='End',
+        type=int,
+        help='End of the evaluation interval in video time reference.',
+        default=None
     )
     args = parser.parse_args()
 
     experiment_root = args.path_to_experiment
-    # TODO: parse additinal arguments (window size, window method)
-    start = None
-    end = None
-    window_method = "SW-5000-1000"
+    window_method = args.window_method
+    start = args.interval_start
+    end = args.interval_end
+    args = parser.parse_args()
 
     # Generate output dir:
     output_dir = os.path.join(experiment_root, "processed_data", "imu_features")

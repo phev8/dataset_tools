@@ -8,7 +8,7 @@ from experiment_handler.object_recognition.class_index_handler import get_top_n_
 
 
 def _load_single_object_recognition_file(filename):
-    return np.load(filename)
+    return pd.read_pickle(filename)
 
 
 def read_object_detections(experiment_path, model_name, start=None, end=None, reference_time=None, convert_time=True):
@@ -47,15 +47,14 @@ def read_object_detections(experiment_path, model_name, start=None, end=None, re
         # Convert start and end time
         if start is not None:
             start_timestamp = convert_timestamps(experiment_path, start, reference_time, et_reference)
-            fd = fd[fd[:, 0] >= start_timestamp, :]
+            fd.drop(fd.loc[fd["timestamp"] < start_timestamp].index, inplace=True)
 
         if end is not None:
             end_timestamp = convert_timestamps(experiment_path, end, reference_time, et_reference)
-            fd = fd[fd[:, 0] <= end_timestamp, :]
+            fd.drop(fd.loc[fd["timestamp"] > end_timestamp].index, inplace=True)
 
         if convert_time and reference_time is not None:
-            print(fd[:, 0])
-            fd[:, 0] = convert_timestamps(experiment_path, fd[:, 0], et_reference, reference_time)
+            fd.timestamp = convert_timestamps(experiment_path, fd.timestamp, et_reference, reference_time)
 
         parsed_data[person_id] = fd
 
@@ -91,8 +90,8 @@ def get_object_detections_by_label(exp_root, model_name, labels, n, save=True):
     for p_id in persons:
         persons_data = data[p_id]
         detections_for_label = []
-        for row in persons_data:
-            found_labels = get_top_n_labels(row[2:], "imagenet", n)
+        for index, row in persons_data.iterrows():
+            found_labels = get_top_n_labels(row.predictions, "imagenet", n)
 
             for l in labels:
                 if l in found_labels:
@@ -100,7 +99,7 @@ def get_object_detections_by_label(exp_root, model_name, labels, n, save=True):
 
                     detections_for_label.append({
                         "label": l,
-                        "timestamp": row[0],
+                        "timestamp": row.timestamp,
                         "top_index": top_index,
                         "person_id": p_id
                     })
@@ -135,7 +134,7 @@ def read_filtered_object_detection_results(experiment_path, model_name, start=No
         parsed_data: pandas Dataframe
     """
     path_to_filtered_obj_rec = find_filtered_object_recognitions(experiment_path, model_name)[0]
-    data = pd.read_csv(path_to_filtered_obj_rec, index_col=0)
+    data = pd.read_csv(path_to_filtered_obj_rec)
 
     persons = data["person_id"].unique()
     for p in persons:
@@ -160,6 +159,6 @@ if __name__ == '__main__':
         for m in model_names:
             get_object_detections_by_label(exp_root, m, labels, 10)
 
-    data = read_filtered_object_detection_results(exp_root, "InceptionV3", 1000, 2000, "video")
+    data = read_filtered_object_detection_results(exp_root, "ResNet50", 1000, 2000, "video")
     print(data.timestamp.min())
     print(data.timestamp.max())

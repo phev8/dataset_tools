@@ -34,3 +34,59 @@ def get_location_of_persons_at_samples(location_labels, sample_times, experiment
         locations.append(current)
 
     return np.array(locations)
+
+
+def get_colocation_labels(locations_at_samples):
+    colocation = {}
+    times = locations_at_samples[:, 0]
+
+    colocation["P1"] = {
+        "P2": np.ones((len(locations_at_samples), 2)),
+        "P3": np.ones((len(locations_at_samples), 2)),
+        "P4": np.ones((len(locations_at_samples), 2))
+    }
+    colocation["P2"] = {
+        "P1": np.ones((len(locations_at_samples), 2)),
+        "P3": np.ones((len(locations_at_samples), 2)),
+        "P4": np.ones((len(locations_at_samples), 2))
+    }
+    colocation["P3"] = {
+        "P1": np.ones((len(locations_at_samples), 2)),
+        "P2": np.ones((len(locations_at_samples), 2)),
+        "P4": np.ones((len(locations_at_samples), 2))
+    }
+    colocation["P4"] = {
+        "P1": np.ones((len(locations_at_samples), 2)),
+        "P3": np.ones((len(locations_at_samples), 2)),
+        "P2": np.ones((len(locations_at_samples), 2))
+    }
+
+    colocation["P1"]["P2"][:, 0] = times
+    colocation["P1"]["P2"][(locations_at_samples[:, 1] - locations_at_samples[:, 2]) != 0, 1] = 0
+    colocation["P1"]["P3"][:, 0] = times
+    colocation["P1"]["P3"][(locations_at_samples[:, 1] - locations_at_samples[:, 3]) != 0, 1] = 0
+    colocation["P1"]["P4"][:, 0] = times
+    colocation["P1"]["P4"][(locations_at_samples[:, 1] - locations_at_samples[:, 4]) != 0, 1] = 0
+
+    colocation["P2"]["P1"][:, 0] = times
+    colocation["P2"]["P1"][(locations_at_samples[:, 1] - locations_at_samples[:, 2]) != 0, 1] = 0
+    colocation["P2"]["P3"][:, 0] = times
+    colocation["P2"]["P3"][(locations_at_samples[:, 2] - locations_at_samples[:, 3]) != 0, 1] = 0
+    colocation["P2"]["P4"][:, 0] = times
+    colocation["P2"]["P4"][(locations_at_samples[:, 2] - locations_at_samples[:, 4]) != 0, 1] = 0
+
+    colocation["P3"]["P1"][:, 0] = times
+    colocation["P3"]["P1"][(locations_at_samples[:, 1] - locations_at_samples[:, 3]) != 0, 1] = 0
+    colocation["P3"]["P2"][:, 0] = times
+    colocation["P3"]["P2"][(locations_at_samples[:, 2] - locations_at_samples[:, 3]) != 0, 1] = 0
+    colocation["P3"]["P4"][:, 0] = times
+    colocation["P3"]["P4"][(locations_at_samples[:, 3] - locations_at_samples[:, 4]) != 0, 1] = 0
+
+    colocation["P4"]["P1"][:, 0] = times
+    colocation["P4"]["P1"][(locations_at_samples[:, 1] - locations_at_samples[:, 4]) != 0, 1] = 0
+    colocation["P4"]["P3"][:, 0] = times
+    colocation["P4"]["P3"][(locations_at_samples[:, 3] - locations_at_samples[:, 4]) != 0, 1] = 0
+    colocation["P4"]["P2"][:, 0] = times
+    colocation["P4"]["P2"][(locations_at_samples[:, 2] - locations_at_samples[:, 4]) != 0, 1] = 0
+
+    return colocation

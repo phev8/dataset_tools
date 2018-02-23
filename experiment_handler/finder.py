@@ -150,7 +150,7 @@ def find_all_sound_files(exp_root):
 def get_object_recognition_infos(exp_root):
     rec_dir = os.path.join(exp_root, "processed_data", "object_recognition_results")
     files = [os.path.join(rec_dir, file) for file in os.listdir(rec_dir) if
-             os.path.isfile(os.path.join(rec_dir, file)) and file.split(".")[-1] == "npy"]
+             os.path.isfile(os.path.join(rec_dir, file)) and file.split(".")[-1] == "pkl"]
 
     persons = []
     models = []
@@ -159,7 +159,7 @@ def get_object_recognition_infos(exp_root):
         filename = os.path.basename(f)
         persons.append(filename.split("_")[0])
         models.append(filename.split("_")[1])
-        training_sets.append(filename.split("_")[2])
+        training_sets.append(filename.split('.')[0].split("_")[2])
 
     persons = set(persons)
     models = set(models)
@@ -169,21 +169,21 @@ def get_object_recognition_infos(exp_root):
 
 def find_object_recognition_files(exp_root, model_name, training_set):
     rec_dir = os.path.join(exp_root, "processed_data", "object_recognition_results")
+
     files = [os.path.join(rec_dir, file) for file in os.listdir(rec_dir) if
              os.path.isfile(os.path.join(rec_dir, file))
-             and file.split(".")[-1] == "npy"
+             and file.split(".")[-1] == "pkl"
              and file.split("_")[1] == model_name
-             and file.split("_")[2] == training_set
+             and file.split('.')[0].split("_")[2] == training_set
              ]
-
     return files
 
 
 def find_filtered_object_recognitions(exp_root, model_name):
     rec_dir = os.path.join(exp_root, "processed_data", "object_recognition_results")
     files = [os.path.join(rec_dir, file) for file in os.listdir(rec_dir) if
-             os.path.isfile(os.path.join(rec_dir, file)) and file.split("_")[0] == "filtered" and file.split("_")[2] == model_name]
-
+             os.path.isfile(os.path.join(rec_dir, file)) and file.split("_")[0] == "filtered" and file.split('.')[0].split("_")[2] == model_name]
+    print(files)
     return files
 
 
