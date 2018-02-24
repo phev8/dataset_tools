@@ -14,8 +14,17 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.neural_network import MLPClassifier
 
+import wardmetrics
+from wardmetrics.core_methods import eval_events, eval_segments
+from wardmetrics.utils import *
+from wardmetrics.visualisations import *
+
+print("Using ward metrics' version",  wardmetrics.__version__)
+
 
 default_time_point = 't_mid'
+imu_features_to_use = ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2'] # ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'gx_count', 'gx_mean', 'gx_std', 'gx_min', 'gx_25%', 'gx_50%', 'gx_75%', 'gx_max', 'gx_skew', 'gx_kurt', 'gx_zc', 'gx_ste', 'gx_freq1', 'gx_Pfreq1', 'gx_freq2', 'gx_Pfreq2', 'gy_count', 'gy_mean', 'gy_std', 'gy_min', 'gy_25%', 'gy_50%', 'gy_75%', 'gy_max', 'gy_skew', 'gy_kurt', 'gy_zc', 'gy_ste', 'gy_freq1', 'gy_Pfreq1', 'gy_freq2', 'gy_Pfreq2', 'gz_count', 'gz_mean', 'gz_std', 'gz_min', 'gz_25%', 'gz_50%', 'gz_75%', 'gz_max', 'gz_skew', 'gz_kurt', 'gz_zc', 'gz_ste', 'gz_freq1', 'gz_Pfreq1', 'gz_freq2', 'gz_Pfreq2', 'mx_count', 'mx_mean', 'mx_std', 'mx_min', 'mx_25%', 'mx_50%', 'mx_75%', 'mx_max', 'mx_skew', 'mx_kurt', 'mx_zc', 'mx_ste', 'mx_freq1', 'mx_Pfreq1', 'mx_freq2', 'mx_Pfreq2', 'my_count', 'my_mean', 'my_std', 'my_min', 'my_25%', 'my_50%', 'my_75%', 'my_max', 'my_skew', 'my_kurt', 'my_zc', 'my_ste', 'my_freq1', 'my_Pfreq1', 'my_freq2', 'my_Pfreq2', 'mz_count', 'mz_mean', 'mz_std', 'mz_min', 'mz_25%', 'mz_50%', 'mz_75%', 'mz_max', 'mz_skew', 'mz_kurt', 'mz_zc', 'mz_ste', 'mz_freq1', 'mz_Pfreq1', 'mz_freq2', 'mz_Pfreq2', 'roll_count', 'roll_mean', 'roll_std', 'roll_min', 'roll_25%', 'roll_50%', 'roll_75%', 'roll_max', 'roll_skew', 'roll_kurt', 'roll_zc', 'roll_ste', 'roll_freq1', 'roll_Pfreq1', 'roll_freq2', 'roll_Pfreq2', 'pitch_count', 'pitch_mean', 'pitch_std', 'pitch_min', 'pitch_25%', 'pitch_50%', 'pitch_75%', 'pitch_max', 'pitch_skew', 'pitch_kurt', 'pitch_zc', 'pitch_ste', 'pitch_freq1', 'pitch_Pfreq1', 'pitch_freq2', 'pitch_Pfreq2', 'yaw_count', 'yaw_mean', 'yaw_std', 'yaw_min', 'yaw_25%', 'yaw_50%', 'yaw_75%', 'yaw_max', 'yaw_skew', 'yaw_kurt', 'yaw_zc', 'yaw_ste', 'yaw_freq1', 'yaw_Pfreq1', 'yaw_freq2', 'yaw_Pfreq2', 'qx_count', 'qx_mean', 'qx_std', 'qx_min', 'qx_25%', 'qx_50%', 'qx_75%', 'qx_max', 'qx_skew', 'qx_kurt', 'qx_zc', 'qx_ste', 'qx_freq1', 'qx_Pfreq1', 'qx_freq2', 'qx_Pfreq2', 'qy_count', 'qy_mean', 'qy_std', 'qy_min', 'qy_25%', 'qy_50%', 'qy_75%', 'qy_max', 'qy_skew', 'qy_kurt', 'qy_zc', 'qy_ste', 'qy_freq1', 'qy_Pfreq1', 'qy_freq2', 'qy_Pfreq2', 'qz_count', 'qz_mean', 'qz_std', 'qz_min', 'qz_25%', 'qz_50%', 'qz_75%', 'qz_max', 'qz_skew', 'qz_kurt', 'qz_zc', 'qz_ste', 'qz_freq1', 'qz_Pfreq1', 'qz_freq2', 'qz_Pfreq2', 'qw_count', 'qw_mean', 'qw_std', 'qw_min', 'qw_25%', 'qw_50%', 'qw_75%', 'qw_max', 'qw_skew', 'qw_kurt', 'qw_zc', 'qw_ste', 'qw_freq1', 'qw_Pfreq1', 'qw_freq2', 'qw_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2', 'g_count', 'g_mean', 'g_std', 'g_min', 'g_25%', 'g_50%', 'g_75%', 'g_max', 'g_skew', 'g_kurt', 'g_zc', 'g_ste', 'g_freq1', 'g_Pfreq1', 'g_freq2', 'g_Pfreq2', 'm_count', 'm_mean', 'm_std', 'm_min', 'm_25%', 'm_50%', 'm_75%', 'm_max', 'm_skew', 'm_kurt', 'm_zc', 'm_ste', 'm_freq1', 'm_Pfreq1', 'm_freq2', 'm_Pfreq2', 'hpy_count', 'hpy_mean', 'hpy_std', 'hpy_min', 'hpy_25%', 'hpy_50%', 'hpy_75%', 'hpy_max', 'hpy_skew', 'hpy_kurt', 'hpy_zc', 'hpy_ste', 'hpy_freq1', 'hpy_Pfreq1', 'hpy_freq2', 'hpy_Pfreq2']
+sound_features_to_use = [] # ['h_mean', 'h_std', 'h_max', 'h_zc', 'h_ste', 'h_freq1', 'h_Pfreq1', 'h_freq2', 'h_Pfreq2', 'w_mean', 'w_std', 'w_max', 'w_zc', 'w_ste', 'w_freq1', 'w_Pfreq1', 'w_freq2', 'w_Pfreq2']
 
 def read_eyetracker_feature_file(exp_root, person_id, window_size, labelset="empty", step_size=1000):
     fname = person_id + "_eye_features_SW-" + str(window_size) + "-" + str(step_size) + "_" + labelset + "-labels.pickle"
@@ -217,7 +226,7 @@ def get_features_and_labels_eye(dataframe):
 
 
 def get_features_and_labels_imu(dataframe):
-    columms_to_features = ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'gx_count', 'gx_mean', 'gx_std', 'gx_min', 'gx_25%', 'gx_50%', 'gx_75%', 'gx_max', 'gx_skew', 'gx_kurt', 'gx_zc', 'gx_ste', 'gx_freq1', 'gx_Pfreq1', 'gx_freq2', 'gx_Pfreq2', 'gy_count', 'gy_mean', 'gy_std', 'gy_min', 'gy_25%', 'gy_50%', 'gy_75%', 'gy_max', 'gy_skew', 'gy_kurt', 'gy_zc', 'gy_ste', 'gy_freq1', 'gy_Pfreq1', 'gy_freq2', 'gy_Pfreq2', 'gz_count', 'gz_mean', 'gz_std', 'gz_min', 'gz_25%', 'gz_50%', 'gz_75%', 'gz_max', 'gz_skew', 'gz_kurt', 'gz_zc', 'gz_ste', 'gz_freq1', 'gz_Pfreq1', 'gz_freq2', 'gz_Pfreq2', 'mx_count', 'mx_mean', 'mx_std', 'mx_min', 'mx_25%', 'mx_50%', 'mx_75%', 'mx_max', 'mx_skew', 'mx_kurt', 'mx_zc', 'mx_ste', 'mx_freq1', 'mx_Pfreq1', 'mx_freq2', 'mx_Pfreq2', 'my_count', 'my_mean', 'my_std', 'my_min', 'my_25%', 'my_50%', 'my_75%', 'my_max', 'my_skew', 'my_kurt', 'my_zc', 'my_ste', 'my_freq1', 'my_Pfreq1', 'my_freq2', 'my_Pfreq2', 'mz_count', 'mz_mean', 'mz_std', 'mz_min', 'mz_25%', 'mz_50%', 'mz_75%', 'mz_max', 'mz_skew', 'mz_kurt', 'mz_zc', 'mz_ste', 'mz_freq1', 'mz_Pfreq1', 'mz_freq2', 'mz_Pfreq2', 'roll_count', 'roll_mean', 'roll_std', 'roll_min', 'roll_25%', 'roll_50%', 'roll_75%', 'roll_max', 'roll_skew', 'roll_kurt', 'roll_zc', 'roll_ste', 'roll_freq1', 'roll_Pfreq1', 'roll_freq2', 'roll_Pfreq2', 'pitch_count', 'pitch_mean', 'pitch_std', 'pitch_min', 'pitch_25%', 'pitch_50%', 'pitch_75%', 'pitch_max', 'pitch_skew', 'pitch_kurt', 'pitch_zc', 'pitch_ste', 'pitch_freq1', 'pitch_Pfreq1', 'pitch_freq2', 'pitch_Pfreq2', 'yaw_count', 'yaw_mean', 'yaw_std', 'yaw_min', 'yaw_25%', 'yaw_50%', 'yaw_75%', 'yaw_max', 'yaw_skew', 'yaw_kurt', 'yaw_zc', 'yaw_ste', 'yaw_freq1', 'yaw_Pfreq1', 'yaw_freq2', 'yaw_Pfreq2', 'qx_count', 'qx_mean', 'qx_std', 'qx_min', 'qx_25%', 'qx_50%', 'qx_75%', 'qx_max', 'qx_skew', 'qx_kurt', 'qx_zc', 'qx_ste', 'qx_freq1', 'qx_Pfreq1', 'qx_freq2', 'qx_Pfreq2', 'qy_count', 'qy_mean', 'qy_std', 'qy_min', 'qy_25%', 'qy_50%', 'qy_75%', 'qy_max', 'qy_skew', 'qy_kurt', 'qy_zc', 'qy_ste', 'qy_freq1', 'qy_Pfreq1', 'qy_freq2', 'qy_Pfreq2', 'qz_count', 'qz_mean', 'qz_std', 'qz_min', 'qz_25%', 'qz_50%', 'qz_75%', 'qz_max', 'qz_skew', 'qz_kurt', 'qz_zc', 'qz_ste', 'qz_freq1', 'qz_Pfreq1', 'qz_freq2', 'qz_Pfreq2', 'qw_count', 'qw_mean', 'qw_std', 'qw_min', 'qw_25%', 'qw_50%', 'qw_75%', 'qw_max', 'qw_skew', 'qw_kurt', 'qw_zc', 'qw_ste', 'qw_freq1', 'qw_Pfreq1', 'qw_freq2', 'qw_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2', 'g_count', 'g_mean', 'g_std', 'g_min', 'g_25%', 'g_50%', 'g_75%', 'g_max', 'g_skew', 'g_kurt', 'g_zc', 'g_ste', 'g_freq1', 'g_Pfreq1', 'g_freq2', 'g_Pfreq2', 'm_count', 'm_mean', 'm_std', 'm_min', 'm_25%', 'm_50%', 'm_75%', 'm_max', 'm_skew', 'm_kurt', 'm_zc', 'm_ste', 'm_freq1', 'm_Pfreq1', 'm_freq2', 'm_Pfreq2', 'hpy_count', 'hpy_mean', 'hpy_std', 'hpy_min', 'hpy_25%', 'hpy_50%', 'hpy_75%', 'hpy_max', 'hpy_skew', 'hpy_kurt', 'hpy_zc', 'hpy_ste', 'hpy_freq1', 'hpy_Pfreq1', 'hpy_freq2', 'hpy_Pfreq2']
+    columms_to_features = imu_features_to_use # ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'gx_count', 'gx_mean', 'gx_std', 'gx_min', 'gx_25%', 'gx_50%', 'gx_75%', 'gx_max', 'gx_skew', 'gx_kurt', 'gx_zc', 'gx_ste', 'gx_freq1', 'gx_Pfreq1', 'gx_freq2', 'gx_Pfreq2', 'gy_count', 'gy_mean', 'gy_std', 'gy_min', 'gy_25%', 'gy_50%', 'gy_75%', 'gy_max', 'gy_skew', 'gy_kurt', 'gy_zc', 'gy_ste', 'gy_freq1', 'gy_Pfreq1', 'gy_freq2', 'gy_Pfreq2', 'gz_count', 'gz_mean', 'gz_std', 'gz_min', 'gz_25%', 'gz_50%', 'gz_75%', 'gz_max', 'gz_skew', 'gz_kurt', 'gz_zc', 'gz_ste', 'gz_freq1', 'gz_Pfreq1', 'gz_freq2', 'gz_Pfreq2', 'mx_count', 'mx_mean', 'mx_std', 'mx_min', 'mx_25%', 'mx_50%', 'mx_75%', 'mx_max', 'mx_skew', 'mx_kurt', 'mx_zc', 'mx_ste', 'mx_freq1', 'mx_Pfreq1', 'mx_freq2', 'mx_Pfreq2', 'my_count', 'my_mean', 'my_std', 'my_min', 'my_25%', 'my_50%', 'my_75%', 'my_max', 'my_skew', 'my_kurt', 'my_zc', 'my_ste', 'my_freq1', 'my_Pfreq1', 'my_freq2', 'my_Pfreq2', 'mz_count', 'mz_mean', 'mz_std', 'mz_min', 'mz_25%', 'mz_50%', 'mz_75%', 'mz_max', 'mz_skew', 'mz_kurt', 'mz_zc', 'mz_ste', 'mz_freq1', 'mz_Pfreq1', 'mz_freq2', 'mz_Pfreq2', 'roll_count', 'roll_mean', 'roll_std', 'roll_min', 'roll_25%', 'roll_50%', 'roll_75%', 'roll_max', 'roll_skew', 'roll_kurt', 'roll_zc', 'roll_ste', 'roll_freq1', 'roll_Pfreq1', 'roll_freq2', 'roll_Pfreq2', 'pitch_count', 'pitch_mean', 'pitch_std', 'pitch_min', 'pitch_25%', 'pitch_50%', 'pitch_75%', 'pitch_max', 'pitch_skew', 'pitch_kurt', 'pitch_zc', 'pitch_ste', 'pitch_freq1', 'pitch_Pfreq1', 'pitch_freq2', 'pitch_Pfreq2', 'yaw_count', 'yaw_mean', 'yaw_std', 'yaw_min', 'yaw_25%', 'yaw_50%', 'yaw_75%', 'yaw_max', 'yaw_skew', 'yaw_kurt', 'yaw_zc', 'yaw_ste', 'yaw_freq1', 'yaw_Pfreq1', 'yaw_freq2', 'yaw_Pfreq2', 'qx_count', 'qx_mean', 'qx_std', 'qx_min', 'qx_25%', 'qx_50%', 'qx_75%', 'qx_max', 'qx_skew', 'qx_kurt', 'qx_zc', 'qx_ste', 'qx_freq1', 'qx_Pfreq1', 'qx_freq2', 'qx_Pfreq2', 'qy_count', 'qy_mean', 'qy_std', 'qy_min', 'qy_25%', 'qy_50%', 'qy_75%', 'qy_max', 'qy_skew', 'qy_kurt', 'qy_zc', 'qy_ste', 'qy_freq1', 'qy_Pfreq1', 'qy_freq2', 'qy_Pfreq2', 'qz_count', 'qz_mean', 'qz_std', 'qz_min', 'qz_25%', 'qz_50%', 'qz_75%', 'qz_max', 'qz_skew', 'qz_kurt', 'qz_zc', 'qz_ste', 'qz_freq1', 'qz_Pfreq1', 'qz_freq2', 'qz_Pfreq2', 'qw_count', 'qw_mean', 'qw_std', 'qw_min', 'qw_25%', 'qw_50%', 'qw_75%', 'qw_max', 'qw_skew', 'qw_kurt', 'qw_zc', 'qw_ste', 'qw_freq1', 'qw_Pfreq1', 'qw_freq2', 'qw_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2', 'g_count', 'g_mean', 'g_std', 'g_min', 'g_25%', 'g_50%', 'g_75%', 'g_max', 'g_skew', 'g_kurt', 'g_zc', 'g_ste', 'g_freq1', 'g_Pfreq1', 'g_freq2', 'g_Pfreq2', 'm_count', 'm_mean', 'm_std', 'm_min', 'm_25%', 'm_50%', 'm_75%', 'm_max', 'm_skew', 'm_kurt', 'm_zc', 'm_ste', 'm_freq1', 'm_Pfreq1', 'm_freq2', 'm_Pfreq2', 'hpy_count', 'hpy_mean', 'hpy_std', 'hpy_min', 'hpy_25%', 'hpy_50%', 'hpy_75%', 'hpy_max', 'hpy_skew', 'hpy_kurt', 'hpy_zc', 'hpy_ste', 'hpy_freq1', 'hpy_Pfreq1', 'hpy_freq2', 'hpy_Pfreq2']
 
     features = np.vstack((
         [dataframe[col].values for col in columms_to_features]
@@ -240,8 +249,8 @@ def get_features_and_labels_sound(dataframe):
 def get_features_and_labels_merged(dataframe, use_eye=True, use_imu=True, use_sound=True):
     #print(list(dataframe.columns.values))
     eye_features = ['fixation_gap_mean', 'fixation_gap_std', 'fixation_length_mean', 'fixation_length_std', 'theta_mean', 'theta_std', 'theta_mean_crossings', 'phi_mean', 'phi_std', 'phi_mean_crossings', 'pupil_size_mean', 'pupil_size_std', 'confidence_mean', 'confidence_mean_crossings']
-    imu_features = ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'gx_count', 'gx_mean', 'gx_std', 'gx_min', 'gx_25%', 'gx_50%', 'gx_75%', 'gx_max', 'gx_skew', 'gx_kurt', 'gx_zc', 'gx_ste', 'gx_freq1', 'gx_Pfreq1', 'gx_freq2', 'gx_Pfreq2', 'gy_count', 'gy_mean', 'gy_std', 'gy_min', 'gy_25%', 'gy_50%', 'gy_75%', 'gy_max', 'gy_skew', 'gy_kurt', 'gy_zc', 'gy_ste', 'gy_freq1', 'gy_Pfreq1', 'gy_freq2', 'gy_Pfreq2', 'gz_count', 'gz_mean', 'gz_std', 'gz_min', 'gz_25%', 'gz_50%', 'gz_75%', 'gz_max', 'gz_skew', 'gz_kurt', 'gz_zc', 'gz_ste', 'gz_freq1', 'gz_Pfreq1', 'gz_freq2', 'gz_Pfreq2', 'mx_count', 'mx_mean', 'mx_std', 'mx_min', 'mx_25%', 'mx_50%', 'mx_75%', 'mx_max', 'mx_skew', 'mx_kurt', 'mx_zc', 'mx_ste', 'mx_freq1', 'mx_Pfreq1', 'mx_freq2', 'mx_Pfreq2', 'my_count', 'my_mean', 'my_std', 'my_min', 'my_25%', 'my_50%', 'my_75%', 'my_max', 'my_skew', 'my_kurt', 'my_zc', 'my_ste', 'my_freq1', 'my_Pfreq1', 'my_freq2', 'my_Pfreq2', 'mz_count', 'mz_mean', 'mz_std', 'mz_min', 'mz_25%', 'mz_50%', 'mz_75%', 'mz_max', 'mz_skew', 'mz_kurt', 'mz_zc', 'mz_ste', 'mz_freq1', 'mz_Pfreq1', 'mz_freq2', 'mz_Pfreq2', 'roll_count', 'roll_mean', 'roll_std', 'roll_min', 'roll_25%', 'roll_50%', 'roll_75%', 'roll_max', 'roll_skew', 'roll_kurt', 'roll_zc', 'roll_ste', 'roll_freq1', 'roll_Pfreq1', 'roll_freq2', 'roll_Pfreq2', 'pitch_count', 'pitch_mean', 'pitch_std', 'pitch_min', 'pitch_25%', 'pitch_50%', 'pitch_75%', 'pitch_max', 'pitch_skew', 'pitch_kurt', 'pitch_zc', 'pitch_ste', 'pitch_freq1', 'pitch_Pfreq1', 'pitch_freq2', 'pitch_Pfreq2', 'yaw_count', 'yaw_mean', 'yaw_std', 'yaw_min', 'yaw_25%', 'yaw_50%', 'yaw_75%', 'yaw_max', 'yaw_skew', 'yaw_kurt', 'yaw_zc', 'yaw_ste', 'yaw_freq1', 'yaw_Pfreq1', 'yaw_freq2', 'yaw_Pfreq2', 'qx_count', 'qx_mean', 'qx_std', 'qx_min', 'qx_25%', 'qx_50%', 'qx_75%', 'qx_max', 'qx_skew', 'qx_kurt', 'qx_zc', 'qx_ste', 'qx_freq1', 'qx_Pfreq1', 'qx_freq2', 'qx_Pfreq2', 'qy_count', 'qy_mean', 'qy_std', 'qy_min', 'qy_25%', 'qy_50%', 'qy_75%', 'qy_max', 'qy_skew', 'qy_kurt', 'qy_zc', 'qy_ste', 'qy_freq1', 'qy_Pfreq1', 'qy_freq2', 'qy_Pfreq2', 'qz_count', 'qz_mean', 'qz_std', 'qz_min', 'qz_25%', 'qz_50%', 'qz_75%', 'qz_max', 'qz_skew', 'qz_kurt', 'qz_zc', 'qz_ste', 'qz_freq1', 'qz_Pfreq1', 'qz_freq2', 'qz_Pfreq2', 'qw_count', 'qw_mean', 'qw_std', 'qw_min', 'qw_25%', 'qw_50%', 'qw_75%', 'qw_max', 'qw_skew', 'qw_kurt', 'qw_zc', 'qw_ste', 'qw_freq1', 'qw_Pfreq1', 'qw_freq2', 'qw_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2', 'g_count', 'g_mean', 'g_std', 'g_min', 'g_25%', 'g_50%', 'g_75%', 'g_max', 'g_skew', 'g_kurt', 'g_zc', 'g_ste', 'g_freq1', 'g_Pfreq1', 'g_freq2', 'g_Pfreq2', 'm_count', 'm_mean', 'm_std', 'm_min', 'm_25%', 'm_50%', 'm_75%', 'm_max', 'm_skew', 'm_kurt', 'm_zc', 'm_ste', 'm_freq1', 'm_Pfreq1', 'm_freq2', 'm_Pfreq2', 'hpy_count', 'hpy_mean', 'hpy_std', 'hpy_min', 'hpy_25%', 'hpy_50%', 'hpy_75%', 'hpy_max', 'hpy_skew', 'hpy_kurt', 'hpy_zc', 'hpy_ste', 'hpy_freq1', 'hpy_Pfreq1', 'hpy_freq2', 'hpy_Pfreq2']
-    sound_features = ['h_mean', 'h_std', 'h_max', 'h_zc', 'h_ste', 'h_freq1', 'h_Pfreq1', 'h_freq2', 'h_Pfreq2', 'w_mean', 'w_std', 'w_max', 'w_zc', 'w_ste', 'w_freq1', 'w_Pfreq1', 'w_freq2', 'w_Pfreq2']
+    imu_features = imu_features_to_use
+    sound_features = sound_features_to_use
 
     columns_to_features = []
     if use_eye:
@@ -256,6 +265,76 @@ def get_features_and_labels_merged(dataframe, use_eye=True, use_imu=True, use_so
     )).transpose()
 
     return dataframe[default_time_point].values, dataframe["label"].values.tolist(), features
+
+
+def use_ward_metrics(ground_truth, detections):
+    persons = ground_truth["person_id"].unique()
+    activities = ground_truth["label"].unique()
+
+    results = []
+    for p in persons:
+        for activity in activities:
+            if activity == "no activity":
+                continue
+
+            activity_det_events = detections.loc[(detections["person_id"] == p) & (detections["label"] == activity)]
+            activity_gt_events = ground_truth.loc[(ground_truth["person_id"] == p) & (ground_truth["label"] == activity)]
+
+            print("\n---------------------------")
+            print("\tResults for " + p + " - " + activity)
+            ground_truth_test = [
+                (row["start"], row["end"]) for index, row in activity_gt_events.iterrows()
+            ]
+
+            detection_test = [
+                (row["start"], row["end"]) for index, row in activity_det_events.iterrows()
+            ]
+
+
+            # Run event-based evaluation:
+            try:
+                gt_event_scores, det_event_scores, detailed_scores, standard_scores = eval_events(ground_truth_test, detection_test)
+            except AttributeError:
+                print("no enough data to evaluate", activity_gt_events )
+                continue
+
+            detailed_scores["person_id"] = p
+            detailed_scores["activity"] = activity
+            results.append(detailed_scores)
+            print(p, activity)
+            #plot_events_with_event_scores(gt_event_scores, det_event_scores, ground_truth_test, detection_test)
+
+            # Print results:
+            print_standard_event_metrics(standard_scores)
+            print_detailed_event_metrics(detailed_scores)
+
+    results = pd.DataFrame(results)
+    print(results)
+
+    for p in persons:
+        current_results = results.loc[results["person_id"] == p]
+        totals = {}
+        for col in results.columns.values:
+            if col != "activity" and col != "person_id":
+                totals[col] = current_results[col].sum()
+        #print(results.columns.values)
+        fig = plot_event_analysis_diagram(totals, use_percentage=False, show=False)
+        plt.title(p)
+        plt.tight_layout()
+        plt.draw()
+
+    for a in activities:
+        current_results = results.loc[results["activity"] == a]
+        totals = {}
+        for col in results.columns.values:
+            if col != "activity" and col != "person_id":
+                totals[col] = current_results[col].sum()
+        #print(results.columns.values)
+        fig = plot_event_analysis_diagram(totals, use_percentage=False, show=False)
+        plt.title(a)
+        plt.tight_layout()
+        plt.draw()
+    plt.show()
 
 
 def test_eye_only(exp_root_1,  exp_root_2, window_size, number_of_classes):
@@ -336,7 +415,7 @@ def test_eye_only(exp_root_1,  exp_root_2, window_size, number_of_classes):
     det_results = pd.concat([p1_dets, p2_dets, p3_dets, p4_dets])
     print(det_results)
 
-    det_results = merge_events(det_results, 65)
+    det_results = merge_events(det_results, 1)
     det_results = filter_events(det_results, 1)
 
     p1_gt = convert_frame_by_frame_to_events(p1_features_1[default_time_point], p1_features_1["label"], "P1")
@@ -346,6 +425,7 @@ def test_eye_only(exp_root_1,  exp_root_2, window_size, number_of_classes):
 
     gt_results = pd.concat([p1_gt, p2_gt, p3_gt, p4_gt])
 
+    use_ward_metrics(gt_results, det_results)
     plot_det_vs_label_events(det_results, gt_results)
     # for i, l in enumerate(y_pred):
     #    print(y_test[i], l)
@@ -521,7 +601,8 @@ def in_experiment_eval(experiment_1_features, experiment_name, activities, featu
     return cnf_matrix, acc
 
 
-def inter_experiment_eval(experiment_1_features, experiment_2_features, exp_1_name, activities, feature_set):
+def inter_experiment_eval(experiment_1_features, experiment_2_features, exp_1_name,
+                          activities, feature_set, event_merging_threshold=5, event_filter_threshold=2):
     # Direction 1:
     training_dfs = pd.concat(experiment_1_features)
     test_dfs = pd.concat(experiment_2_features)
@@ -547,6 +628,36 @@ def inter_experiment_eval(experiment_1_features, experiment_2_features, exp_1_na
     report = classification_report(y_test, y_pred, activities)
     print("accuracy score:", acc)
     print(report)
+
+    # event based:
+    t_test_1, y_test_1, X_test_1 = get_features_and_labels(experiment_2_features[0], feature_set)
+    t_test_2, y_test_2, X_test_2 = get_features_and_labels(experiment_2_features[1], feature_set)
+    t_test_3, y_test_3, X_test_3 = get_features_and_labels(experiment_2_features[2], feature_set)
+    t_test_4, y_test_4, X_test_4 = get_features_and_labels(experiment_2_features[3], feature_set)
+    y_pred_1 = classifier.predict(X_test_1)
+    y_pred_2 = classifier.predict(X_test_2)
+    y_pred_3 = classifier.predict(X_test_3)
+    y_pred_4 = classifier.predict(X_test_4)
+
+    p1_dets = convert_frame_by_frame_to_events(t_test_1, y_pred_1, "P1")
+    p2_dets = convert_frame_by_frame_to_events(t_test_2, y_pred_2, "P2")
+    p3_dets = convert_frame_by_frame_to_events(t_test_3, y_pred_3, "P3")
+    p4_dets = convert_frame_by_frame_to_events(t_test_4, y_pred_4, "P4")
+
+    det_results = pd.concat([p1_dets, p2_dets, p3_dets, p4_dets])
+
+    det_results = merge_events(det_results, event_merging_threshold)
+    det_results = filter_events(det_results, event_filter_threshold)
+
+    p1_gt = convert_frame_by_frame_to_events(experiment_2_features[0][default_time_point].values, experiment_2_features[0]["label"], "P1")
+    p2_gt = convert_frame_by_frame_to_events(experiment_2_features[1][default_time_point].values, experiment_2_features[1]["label"], "P2")
+    p3_gt = convert_frame_by_frame_to_events(experiment_2_features[2][default_time_point].values, experiment_2_features[2]["label"], "P3")
+    p4_gt = convert_frame_by_frame_to_events(experiment_2_features[3][default_time_point].values, experiment_2_features[3]["label"], "P4")
+
+    gt_results = pd.concat([p1_gt, p2_gt, p3_gt, p4_gt])
+
+    use_ward_metrics(gt_results, det_results)
+
     return cnf_matrix, acc
 
 
@@ -781,7 +892,7 @@ def test_imu_snd_sources(experiment_1, experiment_2, number_of_classes):
         ]
 
     step_size = 1000
-    w_eye = 1000
+    w_eye = 15000
     w_imu = 1000
     w_sound = 1000
     p1_features_1 = read_merged_feature_file(experiment_1, "P1", w_eye, w_imu, w_sound, str(number_of_classes)).dropna()
@@ -810,10 +921,17 @@ def test_imu_snd_sources(experiment_1, experiment_2, number_of_classes):
     experiment_1_features = [p1_features_1, p2_features_1, p3_features_1, p4_features_1]
     experiment_2_features = [p1_features_2, p2_features_2, p3_features_2, p4_features_2]
 
-    in_experiment_eval(experiment_1_features, experiment_1, activities, "imu+snd")
-    in_experiment_eval(experiment_2_features, experiment_2, activities, "imu+snd")
-    inter_experiment_eval(experiment_1_features, experiment_2_features, experiment_1, activities, "imu+snd")
-    inter_experiment_eval(experiment_2_features, experiment_1_features, experiment_2, activities, "imu+snd")
+    cnf_1, acc_1 = in_experiment_eval(experiment_1_features, experiment_1, activities, "imu+snd")
+    cnf_2, acc_2 = in_experiment_eval(experiment_2_features, experiment_2, activities, "imu+snd")
+    cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, experiment_1, activities, "imu+snd")
+    cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, experiment_2, activities, "imu+snd")
+
+    print({
+        "intra_1": acc_1,
+        "intra_2": acc_2,
+        "inter_1": acc_3,
+        "inter_2": acc_4,
+    })
 
 
 def test_all_sources(experiment_1, experiment_2, number_of_classes):
@@ -841,8 +959,8 @@ def test_all_sources(experiment_1, experiment_2, number_of_classes):
         ]
 
     step_size = 1000
-    w_eye = 10000
-    w_imu = 1000
+    w_eye = 15000
+    w_imu = 5000
     w_sound = 1000
     p1_features_1 = read_merged_feature_file(experiment_1, "P1", w_eye, w_imu, w_sound, str(number_of_classes)).dropna()
     p1_features_2 = read_merged_feature_file(experiment_2, "P1", w_eye, w_imu, w_sound, str(number_of_classes)).dropna()
@@ -1030,12 +1148,11 @@ if __name__ == '__main__':
     windows = [3000, 5000, 10000, 15000, 20000, 30000, 45000, 60000]
     number_of_classes = 6 # or 1
 
-    print(read_IMU_feature_file(experiment_1, "P1", 5000))
-    exit()
 
     # find_best_window_size_for_classes(experiment_1, experiment_2, windows, number_of_classes)
 
-    test_eye_only(experiment_1, experiment_2, 15000, number_of_classes)
+    #test_eye_only(experiment_1, experiment_2, 15000, number_of_classes)
     # test_imu_only(experiment_1, experiment_2, number_of_classes)
     # test_sound_only(experiment_1, experiment_2, number_of_classes)
-    # test_all_sources(experiment_1, experiment_2, number_of_classes)
+    #test_imu_snd_sources(experiment_1, experiment_2, number_of_classes)
+    test_all_sources(experiment_1, experiment_2, number_of_classes)
