@@ -11,6 +11,61 @@ def _load_single_object_recognition_file(filename):
     return pd.read_pickle(filename)
 
 
+def read_object_detections_for_person(experiment_path, model_name, person_id, start=None, end=None, reference_time=None, convert_time=True):
+    """
+    Read object detections from each subject's eyetracker in a time interval and convert the timestamps if necessary
+
+    Parameters
+    ----------
+    experiment_path: str
+        Root of the experiment (e.g. /data/igroups/experiment_8)
+    model_name: str
+        Results using this models will be read (e.g. ResNet50, InceptionV3 ...)
+    person_id: str
+        For which person it should be
+    start: float
+        Return values from this timestamp (if reference_time is set, the value is interpreted as time on that channel)
+    end: float
+        Return values until this timestamp (if reference_time is set, the value is interpreted as time on that channel)
+    reference_time: str
+        Use this signal channel's time for reference (convert start and end values to correspond with IMU time)
+    convert_time: bool
+        If set the returned array will contain timestamp in reference_time's values
+
+    Returns
+    -------
+        parsed_data: dict
+    """
+    object_detection_files = find_object_recognition_files(experiment_path, model_name, "imagenet")
+
+    parsed_data = None
+    for f in object_detection_files:
+        fd = _load_single_object_recognition_file(f)
+        current_person_id = os.path.basename(f).split('_')[0]
+
+        if person_id != current_person_id:
+            continue
+
+        et_reference = person_id + "_eyetracker"
+        print("Reading data from: ", et_reference)
+
+        # Convert start and end time
+        if start is not None:
+            start_timestamp = convert_timestamps(experiment_path, start, reference_time, et_reference)
+            fd.drop(fd.loc[fd["timestamp"] < start_timestamp].index, inplace=True)
+
+        if end is not None:
+            end_timestamp = convert_timestamps(experiment_path, end, reference_time, et_reference)
+            fd.drop(fd.loc[fd["timestamp"] > end_timestamp].index, inplace=True)
+
+        if convert_time and reference_time is not None:
+            fd.timestamp = convert_timestamps(experiment_path, fd.timestamp, et_reference, reference_time)
+
+        parsed_data = fd
+
+    return parsed_data
+
+
 def read_object_detections(experiment_path, model_name, start=None, end=None, reference_time=None, convert_time=True):
     """
     Read object detections from each subject's eyetracker in a time interval and convert the timestamps if necessary

@@ -2,7 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 import itertools
-from experiment_handler.label_data_reader import read_activity_labels_from_eyetracker_labelling
+from experiment_handler.label_data_reader import read_activity_labels_from_eyetracker_labelling, read_experiment_phases
+from experiment_handler.object_recognition.object_detection_reader import read_object_detections
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from sklearn.svm import SVC
@@ -23,8 +24,8 @@ print("Using ward metrics' version",  wardmetrics.__version__)
 
 
 default_time_point = 't_mid'
-imu_features_to_use = ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2'] # ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'gx_count', 'gx_mean', 'gx_std', 'gx_min', 'gx_25%', 'gx_50%', 'gx_75%', 'gx_max', 'gx_skew', 'gx_kurt', 'gx_zc', 'gx_ste', 'gx_freq1', 'gx_Pfreq1', 'gx_freq2', 'gx_Pfreq2', 'gy_count', 'gy_mean', 'gy_std', 'gy_min', 'gy_25%', 'gy_50%', 'gy_75%', 'gy_max', 'gy_skew', 'gy_kurt', 'gy_zc', 'gy_ste', 'gy_freq1', 'gy_Pfreq1', 'gy_freq2', 'gy_Pfreq2', 'gz_count', 'gz_mean', 'gz_std', 'gz_min', 'gz_25%', 'gz_50%', 'gz_75%', 'gz_max', 'gz_skew', 'gz_kurt', 'gz_zc', 'gz_ste', 'gz_freq1', 'gz_Pfreq1', 'gz_freq2', 'gz_Pfreq2', 'mx_count', 'mx_mean', 'mx_std', 'mx_min', 'mx_25%', 'mx_50%', 'mx_75%', 'mx_max', 'mx_skew', 'mx_kurt', 'mx_zc', 'mx_ste', 'mx_freq1', 'mx_Pfreq1', 'mx_freq2', 'mx_Pfreq2', 'my_count', 'my_mean', 'my_std', 'my_min', 'my_25%', 'my_50%', 'my_75%', 'my_max', 'my_skew', 'my_kurt', 'my_zc', 'my_ste', 'my_freq1', 'my_Pfreq1', 'my_freq2', 'my_Pfreq2', 'mz_count', 'mz_mean', 'mz_std', 'mz_min', 'mz_25%', 'mz_50%', 'mz_75%', 'mz_max', 'mz_skew', 'mz_kurt', 'mz_zc', 'mz_ste', 'mz_freq1', 'mz_Pfreq1', 'mz_freq2', 'mz_Pfreq2', 'roll_count', 'roll_mean', 'roll_std', 'roll_min', 'roll_25%', 'roll_50%', 'roll_75%', 'roll_max', 'roll_skew', 'roll_kurt', 'roll_zc', 'roll_ste', 'roll_freq1', 'roll_Pfreq1', 'roll_freq2', 'roll_Pfreq2', 'pitch_count', 'pitch_mean', 'pitch_std', 'pitch_min', 'pitch_25%', 'pitch_50%', 'pitch_75%', 'pitch_max', 'pitch_skew', 'pitch_kurt', 'pitch_zc', 'pitch_ste', 'pitch_freq1', 'pitch_Pfreq1', 'pitch_freq2', 'pitch_Pfreq2', 'yaw_count', 'yaw_mean', 'yaw_std', 'yaw_min', 'yaw_25%', 'yaw_50%', 'yaw_75%', 'yaw_max', 'yaw_skew', 'yaw_kurt', 'yaw_zc', 'yaw_ste', 'yaw_freq1', 'yaw_Pfreq1', 'yaw_freq2', 'yaw_Pfreq2', 'qx_count', 'qx_mean', 'qx_std', 'qx_min', 'qx_25%', 'qx_50%', 'qx_75%', 'qx_max', 'qx_skew', 'qx_kurt', 'qx_zc', 'qx_ste', 'qx_freq1', 'qx_Pfreq1', 'qx_freq2', 'qx_Pfreq2', 'qy_count', 'qy_mean', 'qy_std', 'qy_min', 'qy_25%', 'qy_50%', 'qy_75%', 'qy_max', 'qy_skew', 'qy_kurt', 'qy_zc', 'qy_ste', 'qy_freq1', 'qy_Pfreq1', 'qy_freq2', 'qy_Pfreq2', 'qz_count', 'qz_mean', 'qz_std', 'qz_min', 'qz_25%', 'qz_50%', 'qz_75%', 'qz_max', 'qz_skew', 'qz_kurt', 'qz_zc', 'qz_ste', 'qz_freq1', 'qz_Pfreq1', 'qz_freq2', 'qz_Pfreq2', 'qw_count', 'qw_mean', 'qw_std', 'qw_min', 'qw_25%', 'qw_50%', 'qw_75%', 'qw_max', 'qw_skew', 'qw_kurt', 'qw_zc', 'qw_ste', 'qw_freq1', 'qw_Pfreq1', 'qw_freq2', 'qw_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2', 'g_count', 'g_mean', 'g_std', 'g_min', 'g_25%', 'g_50%', 'g_75%', 'g_max', 'g_skew', 'g_kurt', 'g_zc', 'g_ste', 'g_freq1', 'g_Pfreq1', 'g_freq2', 'g_Pfreq2', 'm_count', 'm_mean', 'm_std', 'm_min', 'm_25%', 'm_50%', 'm_75%', 'm_max', 'm_skew', 'm_kurt', 'm_zc', 'm_ste', 'm_freq1', 'm_Pfreq1', 'm_freq2', 'm_Pfreq2', 'hpy_count', 'hpy_mean', 'hpy_std', 'hpy_min', 'hpy_25%', 'hpy_50%', 'hpy_75%', 'hpy_max', 'hpy_skew', 'hpy_kurt', 'hpy_zc', 'hpy_ste', 'hpy_freq1', 'hpy_Pfreq1', 'hpy_freq2', 'hpy_Pfreq2']
-sound_features_to_use = [] # ['h_mean', 'h_std', 'h_max', 'h_zc', 'h_ste', 'h_freq1', 'h_Pfreq1', 'h_freq2', 'h_Pfreq2', 'w_mean', 'w_std', 'w_max', 'w_zc', 'w_ste', 'w_freq1', 'w_Pfreq1', 'w_freq2', 'w_Pfreq2']
+imu_features_to_use = ['a_mean', 'a_std', 'a_zc', 'a_ste', 'a_skew'] # ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2'] # ['ax_count', 'ax_mean', 'ax_std', 'ax_min', 'ax_25%', 'ax_50%', 'ax_75%', 'ax_max', 'ax_skew', 'ax_kurt', 'ax_zc', 'ax_ste', 'ax_freq1', 'ax_Pfreq1', 'ax_freq2', 'ax_Pfreq2', 'ay_count', 'ay_mean', 'ay_std', 'ay_min', 'ay_25%', 'ay_50%', 'ay_75%', 'ay_max', 'ay_skew', 'ay_kurt', 'ay_zc', 'ay_ste', 'ay_freq1', 'ay_Pfreq1', 'ay_freq2', 'ay_Pfreq2', 'az_count', 'az_mean', 'az_std', 'az_min', 'az_25%', 'az_50%', 'az_75%', 'az_max', 'az_skew', 'az_kurt', 'az_zc', 'az_ste', 'az_freq1', 'az_Pfreq1', 'az_freq2', 'az_Pfreq2', 'gx_count', 'gx_mean', 'gx_std', 'gx_min', 'gx_25%', 'gx_50%', 'gx_75%', 'gx_max', 'gx_skew', 'gx_kurt', 'gx_zc', 'gx_ste', 'gx_freq1', 'gx_Pfreq1', 'gx_freq2', 'gx_Pfreq2', 'gy_count', 'gy_mean', 'gy_std', 'gy_min', 'gy_25%', 'gy_50%', 'gy_75%', 'gy_max', 'gy_skew', 'gy_kurt', 'gy_zc', 'gy_ste', 'gy_freq1', 'gy_Pfreq1', 'gy_freq2', 'gy_Pfreq2', 'gz_count', 'gz_mean', 'gz_std', 'gz_min', 'gz_25%', 'gz_50%', 'gz_75%', 'gz_max', 'gz_skew', 'gz_kurt', 'gz_zc', 'gz_ste', 'gz_freq1', 'gz_Pfreq1', 'gz_freq2', 'gz_Pfreq2', 'mx_count', 'mx_mean', 'mx_std', 'mx_min', 'mx_25%', 'mx_50%', 'mx_75%', 'mx_max', 'mx_skew', 'mx_kurt', 'mx_zc', 'mx_ste', 'mx_freq1', 'mx_Pfreq1', 'mx_freq2', 'mx_Pfreq2', 'my_count', 'my_mean', 'my_std', 'my_min', 'my_25%', 'my_50%', 'my_75%', 'my_max', 'my_skew', 'my_kurt', 'my_zc', 'my_ste', 'my_freq1', 'my_Pfreq1', 'my_freq2', 'my_Pfreq2', 'mz_count', 'mz_mean', 'mz_std', 'mz_min', 'mz_25%', 'mz_50%', 'mz_75%', 'mz_max', 'mz_skew', 'mz_kurt', 'mz_zc', 'mz_ste', 'mz_freq1', 'mz_Pfreq1', 'mz_freq2', 'mz_Pfreq2', 'roll_count', 'roll_mean', 'roll_std', 'roll_min', 'roll_25%', 'roll_50%', 'roll_75%', 'roll_max', 'roll_skew', 'roll_kurt', 'roll_zc', 'roll_ste', 'roll_freq1', 'roll_Pfreq1', 'roll_freq2', 'roll_Pfreq2', 'pitch_count', 'pitch_mean', 'pitch_std', 'pitch_min', 'pitch_25%', 'pitch_50%', 'pitch_75%', 'pitch_max', 'pitch_skew', 'pitch_kurt', 'pitch_zc', 'pitch_ste', 'pitch_freq1', 'pitch_Pfreq1', 'pitch_freq2', 'pitch_Pfreq2', 'yaw_count', 'yaw_mean', 'yaw_std', 'yaw_min', 'yaw_25%', 'yaw_50%', 'yaw_75%', 'yaw_max', 'yaw_skew', 'yaw_kurt', 'yaw_zc', 'yaw_ste', 'yaw_freq1', 'yaw_Pfreq1', 'yaw_freq2', 'yaw_Pfreq2', 'qx_count', 'qx_mean', 'qx_std', 'qx_min', 'qx_25%', 'qx_50%', 'qx_75%', 'qx_max', 'qx_skew', 'qx_kurt', 'qx_zc', 'qx_ste', 'qx_freq1', 'qx_Pfreq1', 'qx_freq2', 'qx_Pfreq2', 'qy_count', 'qy_mean', 'qy_std', 'qy_min', 'qy_25%', 'qy_50%', 'qy_75%', 'qy_max', 'qy_skew', 'qy_kurt', 'qy_zc', 'qy_ste', 'qy_freq1', 'qy_Pfreq1', 'qy_freq2', 'qy_Pfreq2', 'qz_count', 'qz_mean', 'qz_std', 'qz_min', 'qz_25%', 'qz_50%', 'qz_75%', 'qz_max', 'qz_skew', 'qz_kurt', 'qz_zc', 'qz_ste', 'qz_freq1', 'qz_Pfreq1', 'qz_freq2', 'qz_Pfreq2', 'qw_count', 'qw_mean', 'qw_std', 'qw_min', 'qw_25%', 'qw_50%', 'qw_75%', 'qw_max', 'qw_skew', 'qw_kurt', 'qw_zc', 'qw_ste', 'qw_freq1', 'qw_Pfreq1', 'qw_freq2', 'qw_Pfreq2', 'a_count', 'a_mean', 'a_std', 'a_min', 'a_25%', 'a_50%', 'a_75%', 'a_max', 'a_skew', 'a_kurt', 'a_zc', 'a_ste', 'a_freq1', 'a_Pfreq1', 'a_freq2', 'a_Pfreq2', 'g_count', 'g_mean', 'g_std', 'g_min', 'g_25%', 'g_50%', 'g_75%', 'g_max', 'g_skew', 'g_kurt', 'g_zc', 'g_ste', 'g_freq1', 'g_Pfreq1', 'g_freq2', 'g_Pfreq2', 'm_count', 'm_mean', 'm_std', 'm_min', 'm_25%', 'm_50%', 'm_75%', 'm_max', 'm_skew', 'm_kurt', 'm_zc', 'm_ste', 'm_freq1', 'm_Pfreq1', 'm_freq2', 'm_Pfreq2', 'hpy_count', 'hpy_mean', 'hpy_std', 'hpy_min', 'hpy_25%', 'hpy_50%', 'hpy_75%', 'hpy_max', 'hpy_skew', 'hpy_kurt', 'hpy_zc', 'hpy_ste', 'hpy_freq1', 'hpy_Pfreq1', 'hpy_freq2', 'hpy_Pfreq2']
+sound_features_to_use = ['h_zc', 'h_ste', 'w_ste', 'w_zc']#['h_mean', 'h_std', 'h_max', 'h_zc', 'h_ste', 'h_freq1', 'h_Pfreq1', 'h_freq2', 'h_Pfreq2', 'w_mean', 'w_std', 'w_max', 'w_zc', 'w_ste', 'w_freq1', 'w_Pfreq1', 'w_freq2', 'w_Pfreq2']
 
 def read_eyetracker_feature_file(exp_root, person_id, window_size, labelset="empty", step_size=1000):
     fname = person_id + "_eye_features_SW-" + str(window_size) + "-" + str(step_size) + "_" + labelset + "-labels.pickle"
@@ -237,7 +238,7 @@ def get_features_and_labels_imu(dataframe):
 
 def get_features_and_labels_sound(dataframe):
     #print(list(dataframe.columns.values))
-    columms_to_features = ['h_mean', 'h_std', 'h_max', 'h_zc', 'h_ste', 'h_freq1', 'h_Pfreq1', 'h_freq2', 'h_Pfreq2', 'w_mean', 'w_std', 'w_max', 'w_zc', 'w_ste', 'w_freq1', 'w_Pfreq1', 'w_freq2', 'w_Pfreq2']
+    columms_to_features = sound_features_to_use # ['h_mean', 'h_std', 'h_max', 'h_zc', 'h_ste', 'h_freq1', 'h_Pfreq1', 'h_freq2', 'h_Pfreq2', 'w_mean', 'w_std', 'w_max', 'w_zc', 'w_ste', 'w_freq1', 'w_Pfreq1', 'w_freq2', 'w_Pfreq2']
 
     features = np.vstack((
         [dataframe[col].values for col in columms_to_features]
@@ -267,11 +268,141 @@ def get_features_and_labels_merged(dataframe, use_eye=True, use_imu=True, use_so
     return dataframe[default_time_point].values, dataframe["label"].values.tolist(), features
 
 
-def use_ward_metrics(ground_truth, detections):
+def get_features_and_labels_object_rec(dataframe):
+    #print(list(dataframe.columns.values))
+    columms_to_features = sound_features_to_use # ['h_mean', 'h_std', 'h_max', 'h_zc', 'h_ste', 'h_freq1', 'h_Pfreq1', 'h_freq2', 'h_Pfreq2', 'w_mean', 'w_std', 'w_max', 'w_zc', 'w_ste', 'w_freq1', 'w_Pfreq1', 'w_freq2', 'w_Pfreq2']
+
+    features = np.vstack((
+        [dataframe[col].values for col in columms_to_features]
+    )).transpose()
+
+    return dataframe[default_time_point].values, dataframe["label"].values.tolist(), features
+
+
+def test_object_detections(exp_root_1, exp_root_2, window, number_of_classes):
+    activities = [
+        "no activity",
+        "Walk",
+        "Carry",
+        "Screen placement",
+        "Adjust",
+        "Screwdriver",
+        "Drill"
+    ]
+
+    if number_of_classes == 1:
+        activities = [
+            "no activity",
+            "Precise",
+        ]
+
+    if number_of_classes == 2:
+        activities = [
+            "no activity",
+            "Large",
+            "Precise",
+        ]
+
+    phases = read_experiment_phases(exp_root_1)
+    start_1 = phases['assembly'][0]
+    end_1 = phases['disassembly'][1]
+
+    phases = read_experiment_phases(exp_root_2)
+    start_2 = phases['assembly'][0]
+    end_2 = phases['disassembly'][1]
+
+    models = ["InceptionV3", "ResNet50", "VGG16", "VGG19", "Xception"]
+
+    results = []
+    for model in models:
+        object_recognitions_1 = read_object_detections(exp_root_1, model, start_1, end_1, "video")
+        object_recognitions_2 = read_object_detections(exp_root_2, model, start_2, end_2, "video")
+
+
+
+    # TODO: read object rec results for each category
+    # TODO: do inter and intra experiment evaluation
+    # TODO: smooth feature matrixes with window
+
+    persons = ["P1", "P2", "P3", "P4"]
+
+    features = {}
+    for p in persons:
+        feature_matrix = object_recognitions[p]
+        # print(feature_matrix[:, 0])
+        # print(feature_matrix[:, 1])
+        for row in feature_matrix:
+            print(row)
+
+
+
+        p1_features_1 = read_eyetracker_feature_file(exp_root_1, "P1", window_size, str(number_of_classes)).dropna()
+        p1_features_2 = read_eyetracker_feature_file(exp_root_2, "P1", window_size, str(number_of_classes)).dropna()
+
+        p2_features_1 = read_eyetracker_feature_file(exp_root_1, "P2", window_size, str(number_of_classes)).dropna()
+        p2_features_2 = read_eyetracker_feature_file(exp_root_2, "P2", window_size, str(number_of_classes)).dropna()
+
+        p3_features_1 = read_eyetracker_feature_file(exp_root_1, "P3", window_size, str(number_of_classes)).dropna()
+        p3_features_2 = read_eyetracker_feature_file(exp_root_2, "P3", window_size, str(number_of_classes)).dropna()
+
+        p4_features_1 = read_eyetracker_feature_file(exp_root_1, "P4", window_size, str(number_of_classes)).dropna()
+        p4_features_2 = read_eyetracker_feature_file(exp_root_2, "P4", window_size, str(number_of_classes)).dropna()
+
+        if False:
+            p1_features_1.drop(p1_features_1.loc[p1_features_1["label"] == "no activity"].index, inplace=True)
+            p2_features_1.drop(p2_features_1.loc[p2_features_1["label"] == "no activity"].index, inplace=True)
+            p3_features_1.drop(p3_features_1.loc[p3_features_1["label"] == "no activity"].index, inplace=True)
+            p4_features_1.drop(p4_features_1.loc[p4_features_1["label"] == "no activity"].index, inplace=True)
+
+            p1_features_2.drop(p1_features_2.loc[p1_features_2["label"] == "no activity"].index, inplace=True)
+            p2_features_2.drop(p2_features_2.loc[p2_features_2["label"] == "no activity"].index, inplace=True)
+            p3_features_2.drop(p3_features_2.loc[p3_features_2["label"] == "no activity"].index, inplace=True)
+            p4_features_2.drop(p4_features_2.loc[p4_features_2["label"] == "no activity"].index, inplace=True)
+
+        experiment_1_features = [p1_features_1, p2_features_1, p3_features_1, p4_features_1]
+        experiment_2_features = [p1_features_2, p2_features_2, p3_features_2, p4_features_2]
+
+        cnf_1, acc_1 = in_experiment_eval(experiment_1_features, exp_root_1, activities, "eye")
+        cnf_2, acc_2 = in_experiment_eval(experiment_2_features, exp_root_2, activities, "eye")
+        cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, exp_root_1, activities, "eye", use_ward_metrics_flag=False)
+        cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, exp_root_2, activities, "eye", use_ward_metrics_flag=False)
+        results.append({
+            "window_size": window_size,
+            "intra_1": acc_1,
+            "intra_2": acc_2,
+            "inter_1": acc_3,
+            "inter_2": acc_4,
+        })
+
+    results = pd.DataFrame(results)
+    print(results)
+
+    width = 0.2
+    x = np.array(list(range(0, len(windows))))
+
+    plt.figure(figsize=(10, 3))
+    plt.bar(x - 1 * width, results["inter_1"], width=width, label='independent 1', align='center')
+    plt.bar(x + 0 * width, results["inter_2"], width=width, label='independent 2', align='center')
+    plt.bar(x + 1 * width, results["intra_1"], width=width, label='dependent 1', align='center')
+    plt.bar(x + 2 * width, results["intra_2"], width=width, label='dependent 2', align='center')
+    plt.plot(x, results[["inter_1", "inter_2", "inter_1", "inter_2"]].mean(axis=1, numeric_only=True), linestyle=':', marker='o', color="black")
+    plt.ylabel("Accuracy score")
+    plt.xlabel("Window size in seconds")
+    plt.xticks(x, results["window_size"]/1000)
+    plt.ylim([0, 1])
+    plt.legend(loc='lower right')
+    plt.tight_layout()
+
+    plt.show()
+
+
+
+def use_ward_metrics(ground_truth, detections, wm_plots=False):
     persons = ground_truth["person_id"].unique()
     activities = ground_truth["label"].unique()
 
     results = []
+    results_sd = []
     for p in persons:
         for activity in activities:
             if activity == "no activity":
@@ -301,7 +432,10 @@ def use_ward_metrics(ground_truth, detections):
             detailed_scores["person_id"] = p
             detailed_scores["activity"] = activity
             results.append(detailed_scores)
-            print(p, activity)
+            standard_scores["person_id"] = p
+            standard_scores["activity"] = activity
+            results_sd.append(standard_scores)
+            # print(p, activity)
             #plot_events_with_event_scores(gt_event_scores, det_event_scores, ground_truth_test, detection_test)
 
             # Print results:
@@ -309,35 +443,45 @@ def use_ward_metrics(ground_truth, detections):
             print_detailed_event_metrics(detailed_scores)
 
     results = pd.DataFrame(results)
-    print(results)
+    results_sd = pd.DataFrame(results_sd)
+    #print(results_sd)
 
-    for p in persons:
-        current_results = results.loc[results["person_id"] == p]
-        totals = {}
-        for col in results.columns.values:
-            if col != "activity" and col != "person_id":
-                totals[col] = current_results[col].sum()
-        #print(results.columns.values)
-        fig = plot_event_analysis_diagram(totals, use_percentage=False, show=False)
-        plt.title(p)
-        plt.tight_layout()
-        plt.draw()
-
+    print("Event length weighted values:")
+    print("\t\tprecision & recall")
     for a in activities:
-        current_results = results.loc[results["activity"] == a]
-        totals = {}
-        for col in results.columns.values:
-            if col != "activity" and col != "person_id":
-                totals[col] = current_results[col].sum()
-        #print(results.columns.values)
-        fig = plot_event_analysis_diagram(totals, use_percentage=False, show=False)
-        plt.title(a)
-        plt.tight_layout()
-        plt.draw()
-    plt.show()
+        current_results = results_sd.loc[results["activity"] == a]
+        avg_results_for_activity = current_results.mean(axis=0)
+        print(a + " & " + str(avg_results_for_activity["precision (weighted)"]) + " & " + str(avg_results_for_activity["recall (weighted)"]))
+
+    if wm_plots:
+        for p in persons:
+            current_results = results.loc[results["person_id"] == p]
+            totals = {}
+            for col in results.columns.values:
+                if col != "activity" and col != "person_id":
+                    totals[col] = current_results[col].sum()
+            #print(results.columns.values)
+            fig = plot_event_analysis_diagram(totals, use_percentage=False, show=False)
+            plt.title(p)
+            plt.tight_layout()
+            plt.draw()
+
+        for a in activities:
+            current_results = results.loc[results["activity"] == a]
+            totals = {}
+            for col in results.columns.values:
+                if col != "activity" and col != "person_id":
+                    totals[col] = current_results[col].sum()
+            #print(results.columns.values)
+            fig = plot_event_analysis_diagram(totals, use_percentage=False, show=False)
+            plt.title(a)
+            plt.tight_layout()
+            plt.draw()
+        plt.show()
 
 
-def test_eye_only(exp_root_1,  exp_root_2, window_size, number_of_classes):
+def test_eye_only(exp_root_1,  exp_root_2, window_size, number_of_classes,
+                    use_ward_metrics_flag=False, wm_plots=False):
     activities = [
         "no activity",
         "Walk",
@@ -357,15 +501,15 @@ def test_eye_only(exp_root_1,  exp_root_2, window_size, number_of_classes):
     if number_of_classes == 2:
         activities = [
             "no activity",
-            "Precise",
             "Large",
+            "Precise",
         ]
 
     p1_features_1 = read_eyetracker_feature_file(exp_root_1, "P1", window_size, str(number_of_classes)).dropna()
     p1_features_2 = read_eyetracker_feature_file(exp_root_2, "P1", window_size, str(number_of_classes)).dropna()
 
-    p2_features_1 = read_eyetracker_feature_file(exp_root_1, "P2", window_size, str(number_of_classes)).dropna()
     p2_features_2 = read_eyetracker_feature_file(exp_root_2, "P2", window_size, str(number_of_classes)).dropna()
+    p2_features_1 = read_eyetracker_feature_file(exp_root_1, "P2", window_size, str(number_of_classes)).dropna()
 
     p3_features_1 = read_eyetracker_feature_file(exp_root_1, "P3", window_size, str(number_of_classes)).dropna()
     p3_features_2 = read_eyetracker_feature_file(exp_root_2, "P3", window_size, str(number_of_classes)).dropna()
@@ -373,30 +517,35 @@ def test_eye_only(exp_root_1,  exp_root_2, window_size, number_of_classes):
     p4_features_1 = read_eyetracker_feature_file(exp_root_1, "P4", window_size, str(number_of_classes)).dropna()
     p4_features_2 = read_eyetracker_feature_file(exp_root_2, "P4", window_size, str(number_of_classes)).dropna()
 
-    #p1_features_1.drop(p1_features_1.loc[p1_features_1["label"] == "no activity"].index, inplace=True)
-    #p2_features_1.drop(p2_features_1.loc[p2_features_1["label"] == "no activity"].index, inplace=True)
-    #p3_features_1.drop(p3_features_1.loc[p3_features_1["label"] == "no activity"].index, inplace=True)
-    #p4_features_1.drop(p4_features_1.loc[p4_features_1["label"] == "no activity"].index, inplace=True)
+    if False:
+        p1_features_1.drop(p1_features_1.loc[p1_features_1["label"] == "no activity"].index, inplace=True)
+        p2_features_1.drop(p2_features_1.loc[p2_features_1["label"] == "no activity"].index, inplace=True)
+        p3_features_1.drop(p3_features_1.loc[p3_features_1["label"] == "no activity"].index, inplace=True)
+        p4_features_1.drop(p4_features_1.loc[p4_features_1["label"] == "no activity"].index, inplace=True)
 
-    # print("P1", p1_features_1.count(), p1_features_2.count())
-    # print("P2", p2_features_1.count(), p2_features_2.count())
-    # print("P3", p3_features_1.count(), p3_features_2.count())
-    # print("P4", p4_features_1.count(), p4_features_2.count())
+        p1_features_2.drop(p1_features_2.loc[p1_features_2["label"] == "no activity"].index, inplace=True)
+        p2_features_2.drop(p2_features_2.loc[p2_features_2["label"] == "no activity"].index, inplace=True)
+        p3_features_2.drop(p3_features_2.loc[p3_features_2["label"] == "no activity"].index, inplace=True)
+        p4_features_2.drop(p4_features_2.loc[p4_features_2["label"] == "no activity"].index, inplace=True)
 
-    training_dfs = pd.concat([p1_features_2, p2_features_2, p3_features_2, p4_features_2])
-    test_dfs = pd.concat([p1_features_1, p2_features_1, p3_features_1, p4_features_1])
-    t_train, y_train, X_train = get_features_and_labels(training_dfs, "eye")
-    t_test, y_test, X_test = get_features_and_labels(test_dfs, "eye")
+    experiment_1_features = [p1_features_1, p2_features_1, p3_features_1, p4_features_1]
+    experiment_2_features = [p1_features_2, p2_features_2, p3_features_2, p4_features_2]
 
-    print(t_train.shape, len(y_train), X_train.shape)
-    print(t_test.shape, len(y_test), X_test.shape)
-    # classifier = SVC(kernel='linear')
-    # classifier = KNeighborsClassifier(5)
-    # classifier = DecisionTreeClassifier(random_state=0)
-    classifier = GaussianNB()
-    classifier = OneVsRestClassifier(GaussianNB())
-    y_pred = classifier.fit(X_train, y_train).predict(X_test)
+    cnf_1, acc_1 = in_experiment_eval(experiment_1_features, exp_root_1, activities, "eye")
+    cnf_2, acc_2 = in_experiment_eval(experiment_2_features, exp_root_2, activities, "eye")
+    cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, exp_root_1, activities, "eye", use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
+    cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, exp_root_2, activities, "eye", use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
+    print({
+        "intra_1": acc_1,
+        "intra_2": acc_2,
+        "inter_1": acc_3,
+        "inter_2": acc_4,
+    })
 
+    plot_confusion_matrix(cnf_4, activities, normalize=False)
+
+    # Event analysis
+    return
     t_test_1, y_test_1, X_test_1 = get_features_and_labels(p1_features_1, "eye")
     t_test_2, y_test_2, X_test_2 = get_features_and_labels(p2_features_1, "eye")
     t_test_3, y_test_3, X_test_3 = get_features_and_labels(p3_features_1, "eye")
@@ -425,15 +574,12 @@ def test_eye_only(exp_root_1,  exp_root_2, window_size, number_of_classes):
 
     gt_results = pd.concat([p1_gt, p2_gt, p3_gt, p4_gt])
 
-    use_ward_metrics(gt_results, det_results)
-    plot_det_vs_label_events(det_results, gt_results)
+    # use_ward_metrics(gt_results, det_results)
+    # plot_det_vs_label_events(det_results, gt_results)
     # for i, l in enumerate(y_pred):
     #    print(y_test[i], l)
 
-    # Compute confusion matrix
-    cnf_matrix = confusion_matrix(y_test, y_pred, activities)
-    #np.set_printoptions(precision=2)
-    print(cnf_matrix)
+
 
     acc = accuracy_score(y_test, y_pred)
     print(acc)
@@ -602,7 +748,12 @@ def in_experiment_eval(experiment_1_features, experiment_name, activities, featu
 
 
 def inter_experiment_eval(experiment_1_features, experiment_2_features, exp_1_name,
-                          activities, feature_set, event_merging_threshold=5, event_filter_threshold=2):
+                          activities, feature_set, event_merging_threshold=10, event_filter_threshold=1.5,
+                          #activities, feature_set, event_merging_threshold=2, event_filter_threshold=0,
+                          use_ward_metrics_flag=True,
+                          wm_plots=False,
+                          to_plot_events=True
+                          ):
     # Direction 1:
     training_dfs = pd.concat(experiment_1_features)
     test_dfs = pd.concat(experiment_2_features)
@@ -656,7 +807,12 @@ def inter_experiment_eval(experiment_1_features, experiment_2_features, exp_1_na
 
     gt_results = pd.concat([p1_gt, p2_gt, p3_gt, p4_gt])
 
-    use_ward_metrics(gt_results, det_results)
+    if use_ward_metrics_flag:
+        use_ward_metrics(gt_results, det_results, wm_plots=wm_plots)
+
+    if to_plot_events:
+        plot_det_vs_label_events(det_results, gt_results)
+
 
     return cnf_matrix, acc
 
@@ -681,8 +837,8 @@ def find_best_window_size_for_classes(exp_root_1, exp_root_2, windows, number_of
     if number_of_classes == 2:
         activities = [
             "no activity",
-            "Precise",
             "Large",
+            "Precise",
         ]
 
     results = []
@@ -715,8 +871,8 @@ def find_best_window_size_for_classes(exp_root_1, exp_root_2, windows, number_of
 
         cnf_1, acc_1 = in_experiment_eval(experiment_1_features, exp_root_1, activities, "eye")
         cnf_2, acc_2 = in_experiment_eval(experiment_2_features, exp_root_2, activities, "eye")
-        cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, exp_root_1, activities, "eye")
-        cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, exp_root_2, activities, "eye")
+        cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, exp_root_1, activities, "eye", use_ward_metrics_flag=False)
+        cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, exp_root_2, activities, "eye", use_ward_metrics_flag=False)
         results.append({
             "window_size": window_size,
             "intra_1": acc_1,
@@ -727,6 +883,24 @@ def find_best_window_size_for_classes(exp_root_1, exp_root_2, windows, number_of
 
     results = pd.DataFrame(results)
     print(results)
+
+    width = 0.2
+    x = np.array(list(range(0, len(windows))))
+
+    plt.figure(figsize=(10, 3))
+    plt.bar(x - 1 * width, results["inter_1"], width=width, label='independent 1', align='center')
+    plt.bar(x + 0 * width, results["inter_2"], width=width, label='independent 2', align='center')
+    plt.bar(x + 1 * width, results["intra_1"], width=width, label='dependent 1', align='center')
+    plt.bar(x + 2 * width, results["intra_2"], width=width, label='dependent 2', align='center')
+    plt.plot(x, results[["inter_1", "inter_2", "inter_1", "inter_2"]].mean(axis=1, numeric_only=True), linestyle=':', marker='o', color="black")
+    plt.ylabel("Accuracy score")
+    plt.xlabel("Window size in seconds")
+    plt.xticks(x, results["window_size"]/1000)
+    plt.ylim([0, 1])
+    plt.legend(loc='lower right')
+    plt.tight_layout()
+
+    plt.show()
 
 
 def test_imu_only(exp_root_1, exp_root_2, number_of_classes):
@@ -749,8 +923,8 @@ def test_imu_only(exp_root_1, exp_root_2, number_of_classes):
     if number_of_classes == 2:
         activities = [
             "no activity",
-            "Precise",
             "Large",
+            "Precise",
         ]
 
     position = "right"
@@ -795,7 +969,7 @@ def test_imu_only(exp_root_1, exp_root_2, number_of_classes):
     plot_confusion_matrix(cnf_3, activities, normalize=False)
 
 
-def test_sound_only(exp_root_1, exp_root_2, number_of_classes):
+def test_sound_only(exp_root_1, exp_root_2, number_of_classes, use_ward_metrics_flag=False):
     activities = [
         "no activity",
         "Walk",
@@ -815,8 +989,8 @@ def test_sound_only(exp_root_1, exp_root_2, number_of_classes):
     if number_of_classes == 2:
         activities = [
             "no activity",
-            "Precise",
             "Large",
+            "Precise",
         ]
 
     step_size = 1000
@@ -857,8 +1031,8 @@ def test_sound_only(exp_root_1, exp_root_2, number_of_classes):
 
     cnf_1, acc_1 = in_experiment_eval(experiment_1_features, exp_root_1, activities, "snd")
     cnf_2, acc_2 = in_experiment_eval(experiment_2_features, exp_root_2, activities, "snd")
-    cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, exp_root_1, activities, "snd")
-    cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, exp_root_2, activities, "snd")
+    cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, exp_root_1, activities, "snd", use_ward_metrics_flag=use_ward_metrics_flag)
+    cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, exp_root_2, activities, "snd", use_ward_metrics_flag=use_ward_metrics_flag)
     print({
         "intra_1": acc_1,
         "intra_2": acc_2,
@@ -867,7 +1041,7 @@ def test_sound_only(exp_root_1, exp_root_2, number_of_classes):
     })
 
 
-def test_imu_snd_sources(experiment_1, experiment_2, number_of_classes):
+def test_imu_snd_sources(experiment_1, experiment_2, number_of_classes, use_ward_metrics_flag=False, wm_plots=False):
     activities = [
         "no activity",
         "Walk",
@@ -887,12 +1061,12 @@ def test_imu_snd_sources(experiment_1, experiment_2, number_of_classes):
     if number_of_classes == 2:
         activities = [
             "no activity",
-            "Precise",
             "Large",
+            "Precise",
         ]
 
     step_size = 1000
-    w_eye = 15000
+    w_eye = 10000
     w_imu = 1000
     w_sound = 1000
     p1_features_1 = read_merged_feature_file(experiment_1, "P1", w_eye, w_imu, w_sound, str(number_of_classes)).dropna()
@@ -923,8 +1097,8 @@ def test_imu_snd_sources(experiment_1, experiment_2, number_of_classes):
 
     cnf_1, acc_1 = in_experiment_eval(experiment_1_features, experiment_1, activities, "imu+snd")
     cnf_2, acc_2 = in_experiment_eval(experiment_2_features, experiment_2, activities, "imu+snd")
-    cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, experiment_1, activities, "imu+snd")
-    cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, experiment_2, activities, "imu+snd")
+    cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, experiment_1, activities, "imu+snd", use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
+    cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, experiment_2, activities, "imu+snd", use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
 
     print({
         "intra_1": acc_1,
@@ -934,7 +1108,7 @@ def test_imu_snd_sources(experiment_1, experiment_2, number_of_classes):
     })
 
 
-def test_all_sources(experiment_1, experiment_2, number_of_classes):
+def test_all_sources(experiment_1, experiment_2, number_of_classes, use_ward_metrics_flag=False, wm_plots=False):
     activities = [
         "no activity",
         "Walk",
@@ -954,8 +1128,8 @@ def test_all_sources(experiment_1, experiment_2, number_of_classes):
     if number_of_classes == 2:
         activities = [
             "no activity",
-            "Precise",
             "Large",
+            "Precise",
         ]
 
     step_size = 1000
@@ -990,14 +1164,16 @@ def test_all_sources(experiment_1, experiment_2, number_of_classes):
 
     cnf_1, acc_1 = in_experiment_eval(experiment_1_features, experiment_1, activities, "all")
     cnf_2, acc_2 = in_experiment_eval(experiment_2_features, experiment_2, activities, "all")
-    cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, experiment_1, activities, "all")
-    cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, experiment_2, activities, "all")
+    cnf_3, acc_3 = inter_experiment_eval(experiment_1_features, experiment_2_features, experiment_1, activities, "all", use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
+    cnf_4, acc_4 = inter_experiment_eval(experiment_2_features, experiment_1_features, experiment_2, activities, "all", use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
     print({
         "intra_1": acc_1,
         "intra_2": acc_2,
         "inter_1": acc_3,
         "inter_2": acc_4,
     })
+
+    plot_confusion_matrix(cnf_4, activities, normalize=False)
 
 
 def generate_temporary_feature_files_with_labels(exp_root, persons, window_sizes, number_of_classes, imu_windows, sound_windows):
@@ -1146,13 +1322,16 @@ if __name__ == '__main__':
 
 
     windows = [3000, 5000, 10000, 15000, 20000, 30000, 45000, 60000]
-    number_of_classes = 6 # or 1
+    number_of_classes = 1 # or 1
 
-
+    use_ward_metrics_flag = True
+    wm_plots = True # ward metric plots
     # find_best_window_size_for_classes(experiment_1, experiment_2, windows, number_of_classes)
+    test_object_detections(experiment_1, experiment_2, 2000, number_of_classes)
 
-    #test_eye_only(experiment_1, experiment_2, 15000, number_of_classes)
+
+    # test_eye_only(experiment_1, experiment_2, 10000, number_of_classes, use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
     # test_imu_only(experiment_1, experiment_2, number_of_classes)
     # test_sound_only(experiment_1, experiment_2, number_of_classes)
-    #test_imu_snd_sources(experiment_1, experiment_2, number_of_classes)
-    test_all_sources(experiment_1, experiment_2, number_of_classes)
+    # test_imu_snd_sources(experiment_1, experiment_2, number_of_classes, use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
+    # test_all_sources(experiment_1, experiment_2, number_of_classes, use_ward_metrics_flag=use_ward_metrics_flag, wm_plots=wm_plots)
